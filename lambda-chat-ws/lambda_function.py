@@ -1122,7 +1122,7 @@ def buildRagWithReflection():
     )
         
     # Add edges
-    workflow.add_edge("retrieve_node", "revise_node")
+    workflow.add_edge("retrieve_query", "revise_node")
     
     workflow.add_conditional_edges(
         "revise_node", 
