@@ -1019,7 +1019,8 @@ def revise_node(state: State):
         doc = retrieve(sub_query)
         
         if len(doc):
-            print_doc(i, doc)
+            # print_doc(i, doc)
+            print('-----> doc: ', doc)
             docs += doc
         
     if isKorean(draft):
