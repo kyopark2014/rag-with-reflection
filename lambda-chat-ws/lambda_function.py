@@ -1162,6 +1162,41 @@ def decompose_node(state: State):
     return {
         "sub_queries": [query]
     }    
+
+####################### LangGraph #######################
+# RAG (Basic)
+#########################################################
+
+def buildRagBasic():
+    workflow = StateGraph(State)
+
+    # Add nodes
+    workflow.add_node("retrieve_node", retrieve_node)
+    workflow.add_node("generate_node", generate_node)
+
+    # Set entry point
+    workflow.set_entry_point("retrieve_node")
+    
+    workflow.add_edge("retrieve_node", "generate_node")
+            
+    return workflow.compile()
+    
+def run_rag_basic(connectionId, requestId, query):    
+    app = buildRagBasic()
+    
+    # Run the workflow
+    isTyping(connectionId, requestId)        
+    inputs = {
+        "query": query
+    }    
+    config = {
+        "recursion_limit": 50
+    }
+    
+    output = app.invoke(inputs, config)
+    print('output (run_rag_basic): ', output)
+    
+    return output['draft']
     
 ####################### LangGraph #######################
 # RAG with Reflection
@@ -1658,6 +1693,9 @@ def getResponse(connectionId, jsonBody):
                 if convType == 'normal':      # normal
                     msg = general_conversation(connectionId, requestId, chat, text)                  
 
+                elif convType == 'rag-basic':  # basic RAG
+                    msg = run_rag_basic(connectionId, requestId, text)
+                
                 elif convType == 'rag-with-reflection':  # rag-with-reflection
                     msg = run_rag_with_reflection(connectionId, requestId, text)
 
