@@ -1,5 +1,8 @@
 # Reflection을 이용한 RAG의 성능 향상 
 
+<a href="https://hits.seeyoufarm.com"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fkyopark2014%2Frag-with-reflection&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false"/></a>
+<img alt="License" src="https://img.shields.io/badge/LICENSE-MIT-green">
+
 <a href="https://hits.seeyoufarm.com"><img src="hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fkyopark2014%2Frag-with-reflection%2F&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false"></a>
 <img alt="License" src="https://img.shields.io/badge/LICENSE-MIT-green">
 
