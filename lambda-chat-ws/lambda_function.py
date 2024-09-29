@@ -871,6 +871,8 @@ def generate_node(state: State):
     print("###### generate ######")
     query = state["query"]
     docs = state["docs"]
+    print('query: ', query)
+    print('docs: ', docs)
         
     # RAG generation
     rag_chain = get_reg_chain(isKorean(query))
