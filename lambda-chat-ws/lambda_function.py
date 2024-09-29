@@ -898,32 +898,34 @@ class Reflection(BaseModel):
     superfluous: str = Field(description="Critique of what is superfluous")
 
 class Research(BaseModel):
-    """Provide reflection and then follow up with search queries to improve the writing."""
+    """Provide reflection and then follow up with search queries to improve the question/answer."""
 
-    reflection: Reflection = Field(description="Your reflection on the initial writing.")
+    reflection: Reflection = Field(description="Your reflection on the initial answer.")
     sub_queries: list[str] = Field(
-        description="1-3 search queries for researching improvements to address the critique of your current writing."
+        description="1-3 search queries for researching improvements to address the critique of your current answer."
     )
 
 class ReflectionKor(BaseModel):
-    missing: str = Field(description="작성된 글에 있어야하는데 빠진 내용이나 단점")
-    advisable: str = Field(description="더 좋은 글이 되기 위해 추가하여야 할 내용")
-    superfluous: str = Field(description="글의 길이나 스타일에 대한 비평")
+    missing: str = Field(description="답변에 있어야하는데 빠진 내용이나 단점")
+    advisable: str = Field(description="더 좋은 답변이 되기 위해 추가하여야 할 내용")
+    superfluous: str = Field(description="답변의 길이나 스타일에 대한 비평")
 
 class ResearchKor(BaseModel):
-    """글쓰기를 개선하기 위한 검색 쿼리를 제공합니다."""
+    """답변을 개선하기 위한 검색 쿼리를 제공합니다."""
 
-    reflection: ReflectionKor = Field(description="작성된 글에 대한 평가")
+    reflection: ReflectionKor = Field(description="작성된 답변에 대한 평가")
     sub_queries: list[str] = Field(
-        description="현재 글과 관련된 3개 이내의 검색어"
+        description="답변과 관련된 3개 이내의 검색어"
     )
     
 def reflect_node(state: State):
     print("###### reflect ######")
     #print('state: ', state)    
+    query = state['query']
+    print('query: ', query)
     draft = state['draft']
     print('draft: ', draft)
-    
+        
     reflection = []
     sub_queries = []
     for attempt in range(5):
@@ -931,10 +933,13 @@ def reflect_node(state: State):
         
         if isKorean(draft):
             structured_llm = chat.with_structured_output(ResearchKor, include_raw=True)
+            qa = f"질문: {query}\n\n답변: {draft}"
+    
         else:
             structured_llm = chat.with_structured_output(Research, include_raw=True)
+            qa = f"Question: {query}\n\nAnswer: {draft}"
             
-        info = structured_llm.invoke(draft)
+        info = structured_llm.invoke(qa)
         print(f'attempt: {attempt}, info: {info}')
                 
         if not info['parsed'] == None:
