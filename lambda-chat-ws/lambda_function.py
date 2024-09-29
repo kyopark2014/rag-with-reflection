@@ -539,19 +539,20 @@ def retrieve_from_knowledge_base(query):
     
     docs = []
     for i, document in enumerate(relevant_docs):
-        print(f"{i}: {document.page_content}")
+        #print(f"{i}: {document.page_content}")
+        print_doc(i, document)
         if document.page_content:
             excerpt = document.page_content
         
         score = document.metadata["score"]
-        print('score:', score)
+        # print('score:', score)
         doc_prefix = "knowledge-base"
         
         link = ""
         if "s3Location" in document.metadata["location"]:
             link = document.metadata["location"]["s3Location"]["uri"] if document.metadata["location"]["s3Location"]["uri"] is not None else ""
             
-            print('link:', link)    
+            # print('link:', link)    
             pos = link.find(f"/{doc_prefix}")
             name = link[pos+len(doc_prefix)+1:]
             encoded_name = parse.quote(name)
@@ -562,7 +563,7 @@ def retrieve_from_knowledge_base(query):
             link = document.metadata["location"]["webLocation"]["url"] if document.metadata["location"]["webLocation"]["url"] is not None else ""
             name = "Web Crawler"
 
-        print('link:', link)                    
+        # print('link:', link)                    
 
         docs.append(
             Document(
@@ -642,13 +643,13 @@ def grade_documents_using_parallel_processing(question, documents):
     #print('filtered_docs: ', filtered_docs)
     return filtered_docs
     
-def print_doc(doc):
+def print_doc(i, doc):
     if len(doc.page_content)>=100:
         text = doc.page_content[:100]
     else:
         text = doc.page_content
             
-    print(f"doc: {text}, metadata:{doc.metadata}")
+    print(f"{i} --> doc: {text}, metadata:{doc.metadata}")
     
 def grade_documents(question, documents):
     print("###### grade_documents ######")
@@ -662,8 +663,8 @@ def grade_documents(question, documents):
         # Score each doc    
         chat = get_chat()
         retrieval_grader = get_retrieval_grader(chat)
-        for doc in documents:
-            # print_doc(doc)
+        for i, doc in enumerate(documents):
+            # print_doc(i, doc)
             
             score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
             # print("score: ", score)
@@ -949,7 +950,6 @@ def reflect_node(state: State):
             sub_queries = parsed_info.sub_queries
                 
             print('reflection: ', parsed_info.reflection)            
-            print('sub_queries: ', sub_queries)     
         
             """
             if isKorean(draft):
@@ -964,10 +964,9 @@ def reflect_node(state: State):
                         
                 print('translated_search: ', translated_search)
                 sub_queries += translated_search
-
-            print('sub_queries (mixed): ', sub_queries)
             """
             break
+    print('sub_queries: ', sub_queries)
         
     return {
         "reflection": reflection,
