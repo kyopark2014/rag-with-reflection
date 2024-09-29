@@ -53,12 +53,19 @@ Boundary(c1, "") {
 }
 Container(revise_node, "revise_node")
 
+SystemQueue_Ext(continue_to_retrieve, "continue_to_retrieve\ndraft?")
+SystemQueue_Ext(continue_to_revise, "continue_to_revise")
 
 Rel(Start, retrieve_node, "query")
-Rel(grade_node, generate_node, "filtered doc")
+
+Rel(retrieve_node, continue_to_retrieve, "docs")
+Rel(continue_to_retrieve, generate_node, "generate")
+Rel(continue_to_retrieve, revise_node, "revise")
+
+
+
 Rel(generate_node, reflect_node, "draft")
 
-SystemQueue_Ext(continue_to_revise, "continue_to_revise")
 
 Rel(reflect_node, continue_to_revise, "sub-queries")
 
@@ -66,9 +73,9 @@ Rel(continue_to_revise, retrieve_node1, "sub-query\n1")
 Rel(continue_to_revise, retrieve_node2, "sub-query\n2")
 Rel(continue_to_revise, retrieve_node3, "sub-query\n3")
 
-Rel(retrieve_node1, revise_node, "filtered doc\n1")
-Rel(retrieve_node2, revise_node, "filtered doc\n2")
-Rel(retrieve_node3, revise_node, "filtered doc\n3")
+Rel(retrieve_node1, continue_to_retrieve, "filtered doc\n1")
+Rel(retrieve_node2, continue_to_retrieve, "filtered doc\n2")
+Rel(retrieve_node3, continue_to_retrieve, "filtered doc\n3")
 
 Rel(revise_node, END, "result")
 

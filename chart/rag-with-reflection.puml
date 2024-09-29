@@ -32,44 +32,47 @@ LAYOUT_WITH_LEGEND()
 
 Container(retrieve_node, "retrieve_node")
 
-Boundary(c1, "") {
-    Container(retrieve_node1, "retrieve_node")
-
-    Container(retrieve_node2, "retrieve_node")
-
-    Container(retrieve_node3, "retrieve_node")
-}
-
 Container(generate_node, "generate_node")  
 
-Container(reflect_node, "reflect_node")  
+Boundary(c2, "Reflection") {
+    Container(reflect_node, "reflect_node")
 
-Boundary(c1, "") {
-    Container(retrieve_node1, "retrieve_node")
+    SystemQueue_Ext(continue_to_retrieve, "continue_to_retrieve")
 
-    Container(retrieve_node2, "retrieve_node")
+    Container(retrieve_query1, "retrieve_query")
 
-    Container(retrieve_node3, "retrieve_node")
+    Container(retrieve_query2, "retrieve_query")
+
+    Container(retrieve_query3, "retrieve_query")
+
+    Container(revise_node, "revise_node")
 }
-Container(revise_node, "revise_node")
 
+    
+
+    SystemQueue_Ext(continue_to_reflection, "continue_to_reflection\n(max_revision?)")
 
 Rel(Start, retrieve_node, "query")
-Rel(grade_node, generate_node, "filtered doc")
+
+Rel(retrieve_node, generate_node, "docs")
+
 Rel(generate_node, reflect_node, "draft")
 
-SystemQueue_Ext(continue_to_revise, "continue_to_revise")
 
-Rel(reflect_node, continue_to_revise, "sub-queries")
+Rel(reflect_node, continue_to_retrieve, "sub-queries")
 
-Rel(continue_to_revise, retrieve_node1, "sub-query\n1")
-Rel(continue_to_revise, retrieve_node2, "sub-query\n2")
-Rel(continue_to_revise, retrieve_node3, "sub-query\n3")
+Rel(continue_to_retrieve, retrieve_query1, "sub-query\n1")
+Rel(continue_to_retrieve, retrieve_query2, "sub-query\n2")
+Rel(continue_to_retrieve, retrieve_query3, "sub-query\n3")
 
-Rel(retrieve_node1, revise_node, "filtered doc\n1")
-Rel(retrieve_node2, revise_node, "filtered doc\n2")
-Rel(retrieve_node3, revise_node, "filtered doc\n3")
+Rel(retrieve_query1, revise_node, "docs\n1")
+Rel(retrieve_query2, revise_node, "docs\n2")
+Rel(retrieve_query3, revise_node, "docs\n3")
 
-Rel(revise_node, END, "result")
+Rel(revise_node, continue_to_reflection, "revision")
+
+Rel(continue_to_reflection, reflect_node, "")
+
+Rel(continue_to_reflection, END, "result")
 
 @enduml

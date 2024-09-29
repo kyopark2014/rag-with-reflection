@@ -819,19 +819,16 @@ def traslation(chat, text, input_language, output_language):
 ####################### LangGraph #######################
 # RAG functions
 #########################################################
-
+MAX_REVISIONS = 1
 class State(TypedDict):
     query: str
     draft: str
     docs: List[str]
-    final_answer : str
     reflection : List[str]
     search_queries : List[str]
+    revision_number: int
 
-class RetrieveState(TypedDict):
-    query: str
-
-def retrieve_node(state: RetrieveState):
+def retrieve_node(state: State):
     print("###### retrieve ######")
     query = state['query']
     relevant_docs = retrieve_from_knowledge_base(query)
@@ -840,6 +837,23 @@ def retrieve_node(state: RetrieveState):
     
     if len(relevant_docs):
         filtered_docs = grade_documents(query, relevant_docs)
+    
+    return {
+        "docs": filtered_docs
+    }
+
+class RetrieveState(TypedDict):
+    sub_query: str
+
+def retrieve_query(state: RetrieveState):    
+    print("###### retrieve_query ######")
+    sub_query = state['sub_query']
+    relevant_docs = retrieve_from_knowledge_base(sub_query)
+    
+    print(f'sub_query: {sub_query}, RAG: {relevant_docs}')
+    
+    if len(relevant_docs):
+        filtered_docs = grade_documents(sub_query, relevant_docs)
 
     # web search
     #for q in search_queries:
@@ -1023,18 +1037,21 @@ def revise_node(state: State):
     print('--> draft: ', draft)
     print('--> reflection: ', reflection)
     print('--> revised_draft: ', revised_draft)
-                
+        
+    revision_number = state["revision_number"] if state.get("revision_number") is not None else 1
+            
     return {
-        "final_answer": revised_draft
+        "draft": revised_draft,
+        "revision_number": revision_number + 1
     }
 
 ####################### LangGraph #######################
 # RAG with Reflection
 #########################################################
 
-def continue_to_revise(state: State):
-    print('###### continue_to_revise ######')
-    print('state (continue_to_revise): ', state)
+def continue_to_retrieve(state: State):
+    print('###### continue_to_retrieve ######')
+    print('state (continue_to_retrieve): ', state)
     
     revise_request = []
     for idx, sub_query in enumerate(state["search_queries"]):
@@ -1048,6 +1065,15 @@ def continue_to_revise(state: State):
     print('revise_request: ', revise_request)
     
     return revise_request
+
+def should_to_reflection(state: State, config):
+    print("###### should_to_reflection ######")
+    max_revisions = config.get("configurable", {}).get("max_revisions", MAX_REVISIONS)
+    print("max_revisions: ", max_revisions)
+            
+    if state["revision_number"] > max_revisions:
+        return "end"
+    return "continue"
                 
 def buildRagWithReflection():
     workflow = StateGraph(State)
@@ -1056,6 +1082,7 @@ def buildRagWithReflection():
     workflow.add_node("retrieve_node", retrieve_node)
     workflow.add_node("generate_node", generate_node)
     workflow.add_node("reflect_node", reflect_node)
+    workflow.add_node("retrieve_query", retrieve_query)    
     workflow.add_node("revise_node", revise_node)
 
     # Set entry point
@@ -1066,13 +1093,20 @@ def buildRagWithReflection():
     
     workflow.add_conditional_edges(
         "reflect_node", 
-        continue_to_revise, 
-        ["retrieve_node"]
+        continue_to_retrieve, 
+        ["retrieve_query"]
     )
         
     # Add edges
-    workflow.add_edge("retrieve_node", "revise_node")    
-    workflow.add_edge("revise_node", END)
+    workflow.add_edge("retrieve_node", "revise_node")
+    
+    workflow.add_conditional_edges(
+        "revise_node", 
+        should_to_reflection, 
+        {
+            "end": END, 
+            "continue": "reflect_node"}
+    )
         
     return workflow.compile()
     

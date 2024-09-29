@@ -34,20 +34,38 @@ Container(rewrite_node, "rewrite_node")
 Container(decompose_node, "decompose_node")
 
 Boundary(c1, "") {
-    Container(retrieve_node, "retrieve_node")
-    Container(grade_node, "grade_node")
+    Container(retrieve_node1, "retrieve_node")
+    Container(grade_node1, "grade_node")
+
+    Container(retrieve_node2, "retrieve_node")
+    Container(grade_node2, "grade_node")
+
+    Container(retrieve_node3, "retrieve_node")
+    Container(grade_node3, "grade_node")
 }
 Container(generate_node, "generate_node")
 
 Rel(Start, rewrite_node, "query")
 
-Rel(rewritten_node, decompose_node, "rewritten query")
+Rel(rewrite_node, decompose_node, "modified query")
 
-Rel(decompose_node, retrieve_node, "sub-query")
+Rel(decompose_node, retrieve_node1, "sub-query\n1")
 
-Rel(retrieve_node, grade_node, "related doc")
+Rel(retrieve_node1, grade_node1, "related doc")
 
-Rel(grade_node, generate_node, "filtered doc")
+Rel(grade_node1, generate_node, "filtered doc")
+
+Rel(decompose_node, retrieve_node2, "sub-query\n2")
+
+Rel(retrieve_node2, grade_node2, "related doc")
+
+Rel(grade_node2, generate_node, "filtered doc")
+
+Rel(decompose_node, retrieve_node3, "sub-query\n3")
+
+Rel(retrieve_node3, grade_node3, "related doc")
+
+Rel(grade_node3, generate_node, "filtered doc")
 
 Rel(generate_node, END, "result")
 
