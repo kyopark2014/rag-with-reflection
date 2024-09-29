@@ -829,6 +829,51 @@ def retrieve(query):
     print('length of filtered_docs (retrieve_node): ', len(filtered_docs))
     
     return filtered_docs
+
+def get_references_for_agent(docs):
+    reference = "\n\nFrom\n"
+    for i, doc in enumerate(docs):
+        page = ""
+        if "page" in doc.metadata:
+            page = doc.metadata['page']
+            #print('page: ', page)            
+        url = ""
+        if "url" in doc.metadata:
+            url = doc.metadata['url']
+            #print('url: ', url)                
+        name = ""
+        if "name" in doc.metadata:
+            name = doc.metadata['name']
+            #print('name: ', name)     
+           
+        sourceType = ""
+        if "from" in doc.metadata:
+            sourceType = doc.metadata['from']
+        else:
+            if useEnhancedSearch:
+                sourceType = "OpenSearch"
+            else:
+                sourceType = "WWW"
+        #print('sourceType: ', sourceType)        
+        
+        #if len(doc.page_content)>=1000:
+        #    excerpt = ""+doc.page_content[:1000]
+        #else:
+        #    excerpt = ""+doc.page_content
+        excerpt = ""+doc.page_content
+        # print('excerpt: ', excerpt)
+        
+        # for some of unusual case 
+        #excerpt = excerpt.replace('"', '')        
+        #excerpt = ''.join(c for c in excerpt if c not in '"')
+        excerpt = re.sub('"', '', excerpt)
+        print('excerpt(quotation removed): ', excerpt)
+        
+        if page:                
+            reference = reference + f"{i+1}. {page}page in <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
+        else:
+            reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
+    return reference
     
 ####################### LangGraph #######################
 # RAG functions
@@ -1018,10 +1063,8 @@ def revise_node(state: State):
     for i, sub_query in enumerate(sub_queries):
         doc = retrieve(sub_query)
         
-        if len(doc):
-            # print_doc(i, doc)
-            print('-----> doc: ', doc)
-            docs += doc
+        print('-----> doc: ', doc)
+        docs += doc
         
     if isKorean(draft):
         revise_template = (
@@ -1710,6 +1753,9 @@ def getResponse(connectionId, jsonBody):
                 
                 memory_chain.chat_memory.add_user_message(f"{object}에서 텍스트를 추출하세요.")
                 memory_chain.chat_memory.add_ai_message(extracted_text)
+                
+                if reference_docs:
+                    reference = get_references_for_agent(reference_docs)
             
             else:
                 msg = "uploaded file: "+object
