@@ -850,6 +850,8 @@ class RetrieveState(TypedDict):
 
 def retrieve_query(state: RetrieveState):    
     print("###### retrieve_query ######")
+    print('state (retrieve_query): ', state)
+    
     sub_query = state['sub_query']
     relevant_docs = retrieve_from_knowledge_base(sub_query)
     
