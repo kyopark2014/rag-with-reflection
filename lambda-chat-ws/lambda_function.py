@@ -833,10 +833,13 @@ def retrieve_node(state: State):
     query = state['query']
     relevant_docs = retrieve_from_knowledge_base(query)
     
-    print(f'q: {query}, RAG: {relevant_docs}')
+    # print(f'q: {query}, RAG: {relevant_docs}')
+    print(f'q: {query}')
     
+    filtered_docs = []
     if len(relevant_docs):
         filtered_docs = grade_documents(query, relevant_docs)
+    print('length of filtered_docs: ', len(filtered_docs))
     
     return {
         "docs": filtered_docs
@@ -850,10 +853,18 @@ def retrieve_query(state: RetrieveState):
     sub_query = state['sub_query']
     relevant_docs = retrieve_from_knowledge_base(sub_query)
     
-    print(f'sub_query: {sub_query}, RAG: {relevant_docs}')
+    # print(f'sub_query: {sub_query}, RAG: {relevant_docs}')
+    print(f'q: {sub_query}')
+    for i, doc in enumerate(relevant_docs):
+        if len(doc.page_content)>=50:
+            print(f"{i}, doc: {doc.page_content[:50]}")
+        else:
+            print(f"{i}, doc: {doc.page_content}")
     
+    filtered_docs = []
     if len(relevant_docs):
         filtered_docs = grade_documents(sub_query, relevant_docs)
+    print('length of filtered_docs: ', len(filtered_docs))
 
     # web search
     #for q in sub_queries:
