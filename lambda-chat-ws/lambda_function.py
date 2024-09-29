@@ -664,7 +664,8 @@ def grade_documents(question, documents):
         chat = get_chat()
         retrieval_grader = get_retrieval_grader(chat)
         for i, doc in enumerate(documents):
-            print_doc(i, doc)
+            if len(doc):
+                print_doc(i, doc)
             
             score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
             # print("score: ", score)
@@ -1016,8 +1017,10 @@ def revise_node(state: State):
     docs = []
     for i, sub_query in enumerate(sub_queries):
         doc = retrieve(sub_query)
-        print_doc(i, doc)        
-        docs += doc
+        
+        if len(doc):
+            print_doc(i, doc)
+            docs += doc
         
     if isKorean(draft):
         revise_template = (
