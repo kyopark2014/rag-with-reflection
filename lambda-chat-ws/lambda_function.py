@@ -985,7 +985,7 @@ Advanced RAG는 일반적인 RAG(Retrieval Augmented Generation) 모델의 성�
 3. Parent Document: 문서들 간의 계층 구조를 활용하여 상위 문서와 하위 문서 간의 관계를 파악하고, 이를 통해 검색 성능을 높이고 정보 손실을 줄입니다. \
 이러한 고급 기술들을 통합함으로써 Advanced RAG는 보다 정확하고 포괄적인 지식 검색 및 생성이 가능해집니다. 질의에 대한 관련 정보를 더 잘 찾아내고 활용할 수 있게 되는 것이죠."
 
-result = reflect_node({"query": query, "draf": draft})
+result = reflect_node({"query": query, "draft": draft})
 print('result: ', result)
 
 def revise_node(state: State):   
