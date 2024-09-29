@@ -1,0 +1,76 @@
+@startuml Self RAG
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+!$BLACK = "#black"
+!$COLOR_A_6 = "#d4de5e"
+!$COLOR_A_5 = "#7f3b08"
+!$COLOR_A_4 = "#b35806"
+!$COLOR_A_3 = "#e08214"
+!$COLOR_A_2 = "#fdb863"
+!$COLOR_A_1 = "#fee0b6"
+!$COLOR_NEUTRAL = "#f7f7f7"
+!$COLOR_B_1 = "#d8daeb"
+!$COLOR_B_2 = "#b2abd2"
+!$COLOR_B_3 = "#8073ac"
+!$COLOR_B_4 = "#542788"
+!$COLOR_B_5 = "#2d004b"
+!$COLOR_REL_LINE = "#8073ac"
+!$COLOR_REL_TEXT = "#8073ac"
+
+UpdateElementStyle("container", $bgColor=$COLOR_A_6, $fontColor=$BLACK, $borderColor=$COLOR_A_1, $shadowing="false", $legendText="Internal user")
+UpdateElementStyle("system", $bgColor=$COLOR_B_4, $fontColor=$COLOR_NEUTRAL, $borderColor=$COLOR_B_2, $legendText="External system")
+UpdateRelStyle($lineColor=$COLOR_REL_LINE, $textColor=$COLOR_REL_TEXT)
+
+LAYOUT_WITH_LEGEND()
+
+'System(start, "Start")
+'System(END, "END")
+
+Container(retrieve_node, "retrieve_node")
+
+Container(generate_node, "generate_node")  
+
+Boundary(c2, "Reflection") {
+    Container(reflect_node, "reflect_node")
+
+    SystemQueue_Ext(continue_to_retrieve_query, "continue_to_retrieve_query")
+
+    Container(retrieve_query1, "retrieve_query")
+
+    Container(retrieve_query2, "retrieve_query")
+
+    Container(retrieve_query3, "retrieve_query")
+
+    Container(revise_node, "revise_node")
+}
+
+SystemQueue_Ext(continue_to_reflection, "continue_to_reflection\n(max_revision?)")
+
+Rel(Start, retrieve_node, "query")
+
+Rel(retrieve_node, generate_node, "docs")
+
+Rel(generate_node, reflect_node, "draft")
+
+
+Rel(reflect_node, continue_to_retrieve_query, "sub-queries")
+
+Rel(continue_to_retrieve_query, retrieve_query1, "sub-query\n1")
+Rel(continue_to_retrieve_query, retrieve_query2, "sub-query\n2")
+Rel(continue_to_retrieve_query, retrieve_query3, "sub-query\n3")
+
+Rel(retrieve_query1, revise_node, "docs\n1")
+Rel(retrieve_query2, revise_node, "docs\n2")
+Rel(retrieve_query3, revise_node, "docs\n3")
+
+Rel(revise_node, continue_to_reflection, "revision")
+
+Rel(continue_to_reflection, reflect_node, "")
+
+Rel(continue_to_reflection, END, "result")
+
+@enduml
