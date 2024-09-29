@@ -48,7 +48,7 @@ Rel(retrieve_node, generate_node, "docs")
 
 Rel(generate_node, reflect_node, "draft")
 
-Rel(reflect_node, revise_node, "sub-queries")
+Rel(reflect_node, revise_node, "reflection,\nsub-queries")
 
 Rel(revise_node, continue_to_reflection, "revision")
 

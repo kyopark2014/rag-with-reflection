@@ -1588,6 +1588,7 @@ def getResponse(connectionId, jsonBody):
     print('rag_state: ', rag_state)
         
     print('initiate....')
+    
     global reference_docs
     reference_docs = []
 
@@ -1665,6 +1666,10 @@ def getResponse(connectionId, jsonBody):
 
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)
+                
+            if reference_docs:
+                reference = get_references_for_agent(reference_docs)
+                # print('reference: ', reference)
                 
         elif type == 'document':
             isTyping(connectionId, requestId)
@@ -1754,9 +1759,6 @@ def getResponse(connectionId, jsonBody):
                 memory_chain.chat_memory.add_user_message(f"{object}에서 텍스트를 추출하세요.")
                 memory_chain.chat_memory.add_ai_message(extracted_text)
                 
-                if reference_docs:
-                    reference = get_references_for_agent(reference_docs)
-            
             else:
                 msg = "uploaded file: "+object
         
