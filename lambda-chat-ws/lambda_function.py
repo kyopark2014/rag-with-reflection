@@ -664,7 +664,7 @@ def grade_documents(question, documents):
         retrieval_grader = get_retrieval_grader(chat)
         for doc in documents:
             # print('doc: ', doc)
-            # print_doc(doc)
+            print_doc(doc)
             
             score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
             # print("score: ", score)
@@ -834,7 +834,7 @@ def retrieve_node(state: State):
     relevant_docs = retrieve_from_knowledge_base(query)
     
     # print(f'q: {query}, RAG: {relevant_docs}')
-    print(f'q: {query}')
+    print(f'query: {query}, length: {len(relevant_docs)}')
     
     filtered_docs = []
     if len(relevant_docs):
@@ -1080,8 +1080,8 @@ def decompose_node(state: State):
 #########################################################
 
 def continue_to_retrieve_query(state: State):
-    print('###### continue_to_retrieve ######')
-    print('state (continue_to_retrieve): ', state)
+    print('###### continue_to_retrieve_query ######')
+    print('state (continue_to_retrieve_query): ', state)
     
     revise_request = []
     for idx, sub_query in enumerate(state["sub_queries"]):

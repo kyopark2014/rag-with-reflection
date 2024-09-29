@@ -37,7 +37,7 @@ Container(generate_node, "generate_node")
 Boundary(c2, "Reflection") {
     Container(reflect_node, "reflect_node")
 
-    SystemQueue_Ext(continue_to_retrieve, "continue_to_retrieve")
+    SystemQueue_Ext(continue_to_retrieve_query, "continue_to_retrieve_query")
 
     Container(retrieve_query1, "retrieve_query")
 
@@ -48,9 +48,7 @@ Boundary(c2, "Reflection") {
     Container(revise_node, "revise_node")
 }
 
-    
-
-    SystemQueue_Ext(continue_to_reflection, "continue_to_reflection\n(max_revision?)")
+SystemQueue_Ext(continue_to_reflection, "continue_to_reflection\n(max_revision?)")
 
 Rel(Start, retrieve_node, "query")
 
@@ -59,11 +57,11 @@ Rel(retrieve_node, generate_node, "docs")
 Rel(generate_node, reflect_node, "draft")
 
 
-Rel(reflect_node, continue_to_retrieve, "sub-queries")
+Rel(reflect_node, continue_to_retrieve_query, "sub-queries")
 
-Rel(continue_to_retrieve, retrieve_query1, "sub-query\n1")
-Rel(continue_to_retrieve, retrieve_query2, "sub-query\n2")
-Rel(continue_to_retrieve, retrieve_query3, "sub-query\n3")
+Rel(continue_to_retrieve_query, retrieve_query1, "sub-query\n1")
+Rel(continue_to_retrieve_query, retrieve_query2, "sub-query\n2")
+Rel(continue_to_retrieve_query, retrieve_query3, "sub-query\n3")
 
 Rel(retrieve_query1, revise_node, "docs\n1")
 Rel(retrieve_query2, revise_node, "docs\n2")
