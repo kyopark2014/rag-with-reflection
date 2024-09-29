@@ -15,5 +15,5 @@ RAG의 결과가 충분한 context를 포함하고 있지 않은 경우에 [Quer
 
 ## Query Transformation
 
-![image](./chart/retransformation.png)
+![image](./chart/rag-with-transformation.png)
 
