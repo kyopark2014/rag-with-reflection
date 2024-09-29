@@ -828,7 +828,10 @@ class State(TypedDict):
     reflection : List[str]
     search_queries : List[str]
 
-def retrieve_node(state: State):
+class RetrieveState(TypedDict):
+    query: str
+
+def retrieve_node(state: RetrieveState):
     print("###### retrieve ######")
     query = state['query']
     relevant_docs = retrieve_from_knowledge_base(query)
@@ -847,7 +850,6 @@ def retrieve_node(state: State):
     #        filtered_docs += grade_documents(q, docs)
     
     return {
-        "query": query,
         "docs": filtered_docs
     }
 
@@ -1029,6 +1031,23 @@ def revise_node(state: State):
 ####################### LangGraph #######################
 # RAG with Reflection
 #########################################################
+
+def continue_to_revise(state: State):
+    print('###### continue_to_revise ######')
+    print('state (continue_to_revise): ', state)
+    
+    revise_request = []
+    for idx, sub_query in enumerate(state["search_queries"]):
+        print(f"draft[{idx}]: {sub_query}")
+        
+        if sub_query:
+            revise_request.append(Send("revise_node", {
+                "sub_query": sub_query
+            }))
+    
+    print('revise_request: ', revise_request)
+    
+    return revise_request
                 
 def buildRagWithReflection():
     workflow = StateGraph(State)
@@ -1041,11 +1060,18 @@ def buildRagWithReflection():
 
     # Set entry point
     workflow.set_entry_point("retrieve_node")
-        
-    # Add edges
+    
     workflow.add_edge("retrieve_node", "generate_node")
     workflow.add_edge("generate_node", "reflect_node")
-    workflow.add_edge("reflect_node", "revise_node")
+    
+    workflow.add_conditional_edges(
+        "reflect_node", 
+        continue_to_revise, 
+        ["retrieve_node"]
+    )
+        
+    # Add edges
+    workflow.add_edge("retrieve_node", "revise_node")    
     workflow.add_edge("revise_node", END)
         
     return workflow.compile()
