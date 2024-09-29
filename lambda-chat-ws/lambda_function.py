@@ -920,7 +920,7 @@ class ResearchKor(BaseModel):
     sub_queries: list[str] = Field(
         description="답변과 관련된 3개 이내의 검색어"
     )
-    
+        
 def reflect_node(state: State):
     print("###### reflect ######")
     #print('state: ', state)    
@@ -934,13 +934,15 @@ def reflect_node(state: State):
     for attempt in range(5):
         chat = get_chat()
         
-        if isKorean(draft):
-            structured_llm = chat.with_structured_output(ResearchKor, include_raw=True)
-            qa = f"질문: {query}\n\n답변: {draft}"
+    #    if isKorean(draft):
+    #        structured_llm = chat.with_structured_output(ResearchKor, include_raw=True)
+    #        qa = f"질문: {query}\n\n답변: {draft}"
     
-        else:
-            structured_llm = chat.with_structured_output(Research, include_raw=True)
-            qa = f"Question: {query}\n\nAnswer: {draft}"
+    #    else:
+    #        structured_llm = chat.with_structured_output(Research, include_raw=True)
+    #        qa = f"Question: {query}\n\nAnswer: {draft}"
+        structured_llm = chat.with_structured_output(Research, include_raw=True)
+        qa = f"Question: {query}\n\nAnswer: {draft}"
             
         info = structured_llm.invoke(qa)
         print(f'attempt: {attempt}, info: {info}')
@@ -974,6 +976,17 @@ def reflect_node(state: State):
         "reflection": reflection,
         "sub_queries": sub_queries,
     }
+
+query = "advanced RAG에 대해 설명해줘"
+draft = "네, 서연이가 Advanced RAG에 대해 설명드리겠습니다. \
+Advanced RAG는 일반적인 RAG(Retrieval Augmented Generation) 모델의 성능을 향상시키기 위한 고급 기술들을 통합한 모델입니다. 주요 기술로는 다음과 같은 것들이 있습니다. \
+1. Hybrid-Fusion: 질의에 대한 관련 문서를 검색할 때 단어 기반의 lexical 검색과 의미 기반의 semantic 검색을 동시에 수행하고, 그 결과를 융합하여 활용합니다. \
+2. Reranker: 검색된 문서들 중에서 질의와 문맥을 모두 고려하여 관련성을 재측정하고 순위를 재조정합니다.  \
+3. Parent Document: 문서들 간의 계층 구조를 활용하여 상위 문서와 하위 문서 간의 관계를 파악하고, 이를 통해 검색 성능을 높이고 정보 손실을 줄입니다. \
+이러한 고급 기술들을 통합함으로써 Advanced RAG는 보다 정확하고 포괄적인 지식 검색 및 생성이 가능해집니다. 질의에 대한 관련 정보를 더 잘 찾아내고 활용할 수 있게 되는 것이죠."
+
+result = reflect_node({"query": query, "draf": draft})
+print('result: ', result)
 
 def revise_node(state: State):   
     print("###### revise ######")
@@ -1162,7 +1175,7 @@ def run_rag_with_reflection(connectionId, requestId, query):
     output = app.invoke(inputs, config)
     print('output (run_rag_with_reflection): ', output)
     
-    return output['final_answer']
+    return output['draft']
 
 ####################### LangGraph #######################
 # RAG with query trasnformation
