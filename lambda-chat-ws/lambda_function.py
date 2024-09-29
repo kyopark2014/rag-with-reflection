@@ -505,6 +505,77 @@ def general_conversation(connectionId, requestId, chat, query):
     
     return msg
 
+####################### LangGraph #######################
+# Functions
+#########################################################
+
+knowledge_base_id = None
+def retrieve_from_knowledge_base(query):
+    global knowledge_base_id
+    if not knowledge_base_id:        
+        client = boto3.client('bedrock-agent')         
+        response = client.list_knowledge_bases(
+            maxResults=10
+        )
+        print('response: ', response)
+                
+        if "knowledgeBaseSummaries" in response:
+            summaries = response["knowledgeBaseSummaries"]
+            for summary in summaries:
+                if summary["name"] == knowledge_base_name:
+                    knowledge_base_id = summary["knowledgeBaseId"]
+                    print('knowledge_base_id: ', knowledge_base_id)
+                    break
+    
+    relevant_docs = []
+    if knowledge_base_id:    
+        retriever = AmazonKnowledgeBasesRetriever(
+            knowledge_base_id=knowledge_base_id, 
+            retrieval_config={"vectorSearchConfiguration": {"numberOfResults": 2}},
+        )
+        
+        relevant_docs = retriever.invoke(query)
+        print(relevant_docs)
+    
+    docs = []
+    for i, document in enumerate(relevant_docs):
+        print(f"{i}: {document.page_content}")
+        if document.page_content:
+            excerpt = document.page_content
+        
+        score = document.metadata["score"]
+        print('score:', score)
+        doc_prefix = "knowledge-base"
+        
+        link = ""
+        if "s3Location" in document.metadata["location"]:
+            link = document.metadata["location"]["s3Location"]["url"] if document.metadata["location"]["s3Location"]["url"] is not None else ""
+            
+            print('link:', link)    
+            pos = link.find(f"/{doc_prefix}")
+            name = link[pos+len(doc_prefix)+1:]
+            encoded_name = parse.quote(name)
+            print('name:', name)
+            link = f"{path}{doc_prefix}{encoded_name}"
+            
+        elif "webLocation" in document.metadata["location"]:
+            link = document.metadata["location"]["webLocation"]["url"] if document.metadata["location"]["webLocation"]["url"] is not None else ""
+            name = "Web Crawler"
+
+        print('link:', link)                    
+
+        docs.append(
+            Document(
+                page_content=excerpt,
+                metadata={
+                    'name': name,
+                    'url': link,
+                    'from': 'RAG'
+                },
+            )
+        )
+    return docs
+
 def get_retrieval_grader(chat):
     system = """You are a grader assessing relevance of a retrieved document to a user question. \n 
     If the document contains keyword(s) or semantic meaning related to the question, grade it as relevant. \n
@@ -693,18 +764,105 @@ class GradeDocuments(BaseModel):
 
     binary_score: str = Field(description="Documents are relevant to the question, 'yes' or 'no'")
 
+def get_reg_chain(langMode):
+    if langMode:
+        system = (
+        """다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+
+        <context>
+        {context}
+        </context>""")
+    else: 
+        system = (
+        """Here is pieces of context, contained in <context> tags. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+        
+        <context>
+        {context}
+        </context>""")
+        
+    human = "{question}"
+        
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+                    
+    chat = get_chat()
+    rag_chain = prompt | chat
+    return rag_chain
+
+def traslation(chat, text, input_language, output_language):
+    system = (
+        "You are a helpful assistant that translates {input_language} to {output_language} in <article> tags. Put it in <result> tags."
+    )
+    human = "<article>{text}</article>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    # print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "input_language": input_language,
+                "output_language": output_language,
+                "text": text,
+            }
+        )
+        
+        msg = result.content
+        # print('translated text: ', msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+
+    return msg[msg.find('<result>')+8:len(msg)-9] # remove <result> tag
 
 ####################### LangGraph #######################
-# Long form Writing Agent
+# RAG functions
 #########################################################
-    
-# Workflow - Reflection
-class ReflectionState(TypedDict):
-    draft : str
+
+class State(TypedDict):
+    query: str
+    draft: str
+    docs: List[str]
+    final_answer : str
     reflection : List[str]
     search_queries : List[str]
-    revised_draft: str
-    revision_number: int
+
+def retrieve_node(state: State):
+    print("###### retrieve ######")
+    query = state['query']
+    relevant_docs = retrieve_from_knowledge_base(query)
+    
+    print(f'q: {query}, RAG: {relevant_docs}')
+    
+    if len(relevant_docs):
+        filtered_docs = grade_documents(query, relevant_docs)
+
+    # web search
+    #for q in search_queries:
+    #    docs = tavily_search(q, 4)
+    #    print(f'q: {q}, WEB: {docs}')
+        
+    #    if len(docs):
+    #        filtered_docs += grade_documents(q, docs)
+    
+    return {
+        "query": query,
+        "docs": filtered_docs
+    }
+
+def generate_node(state: State):
+    print("###### generate ######")
+    query = state["query"]
+    docs = state["docs"]
+        
+    # RAG generation
+    rag_chain = get_reg_chain(isKorean(query))
+        
+    answer = rag_chain.invoke({"context": docs, "question": query})
+    print('answer: ', answer.content)
+            
+    return {"query": query, "draft": answer.content}
         
 class Reflection(BaseModel):
     missing: str = Field(description="Critique of what is missing.")
@@ -732,7 +890,7 @@ class ResearchKor(BaseModel):
         description="현재 글과 관련된 3개 이내의 검색어"
     )
     
-def reflect_node(state: ReflectionState):
+def reflect_node(state: State):
     print("###### reflect ######")
     draft = state['draft']
     print('draft: ', draft)
@@ -775,89 +933,20 @@ def reflect_node(state: ReflectionState):
             print('search_queries (mixed): ', search_queries)
             break
         
-    revision_number = state["revision_number"] if state.get("revision_number") is not None else 1
     return {
         "reflection": reflection,
         "search_queries": search_queries,
-        "revision_number": revision_number + 1
     }
 
-knowledge_base_id = None
-def retrieve_from_knowledge_base(query):
-    global knowledge_base_id
-    if not knowledge_base_id:        
-        client = boto3.client('bedrock-agent')         
-        response = client.list_knowledge_bases(
-            maxResults=10
-        )
-        print('response: ', response)
-                
-        if "knowledgeBaseSummaries" in response:
-            summaries = response["knowledgeBaseSummaries"]
-            for summary in summaries:
-                if summary["name"] == knowledge_base_name:
-                    knowledge_base_id = summary["knowledgeBaseId"]
-                    print('knowledge_base_id: ', knowledge_base_id)
-                    break
-    
-    relevant_docs = []
-    if knowledge_base_id:    
-        retriever = AmazonKnowledgeBasesRetriever(
-            knowledge_base_id=knowledge_base_id, 
-            retrieval_config={"vectorSearchConfiguration": {"numberOfResults": 2}},
-        )
-        
-        relevant_docs = retriever.invoke(query)
-        print(relevant_docs)
-    
-    docs = []
-    for i, document in enumerate(relevant_docs):
-        print(f"{i}: {document.page_content}")
-        if document.page_content:
-            excerpt = document.page_content
-        
-        score = document.metadata["score"]
-        print('score:', score)
-        doc_prefix = "knowledge-base"
-        
-        link = ""
-        if "s3Location" in document.metadata["location"]:
-            link = document.metadata["location"]["s3Location"]["url"] if document.metadata["location"]["s3Location"]["url"] is not None else ""
-            
-            print('link:', link)    
-            pos = link.find(f"/{doc_prefix}")
-            name = link[pos+len(doc_prefix)+1:]
-            encoded_name = parse.quote(name)
-            print('name:', name)
-            link = f"{path}{doc_prefix}{encoded_name}"
-            
-        elif "webLocation" in document.metadata["location"]:
-            link = document.metadata["location"]["webLocation"]["url"] if document.metadata["location"]["webLocation"]["url"] is not None else ""
-            name = "Web Crawler"
-
-        print('link:', link)                    
-
-        docs.append(
-            Document(
-                page_content=excerpt,
-                metadata={
-                    'name': name,
-                    'url': link,
-                    'from': 'RAG'
-                },
-            )
-        )
-    return docs
-        
-def revise_draft(state: ReflectionState):   
-    print("###### revise_draft ######")
+def revise_node(state: State):   
+    print("###### revise ######")
         
     draft = state['draft']
-    search_queries = state['search_queries']
     reflection = state['reflection']
+    search_queries = state['search_queries']
     print('draft: ', draft)
-    print('search_queries: ', search_queries)
     print('reflection: ', reflection)
+    print('search_queries: ', search_queries)
         
     if isKorean(draft):
         revise_template = (
@@ -900,58 +989,14 @@ def revise_draft(state: ReflectionState):
     revise_prompt = ChatPromptTemplate([
         ('human', revise_template)
     ])
-                              
-    filtered_docs = []    
-        
-    # RAG - knowledge base
-    if rag_state=='enable':
-        for q in search_queries:
-            docs = retrieve_from_knowledge_base(q)
-            print(f'q: {q}, RAG: {docs}')
-        
-            if len(docs):
-                filtered_docs += grade_documents(q, docs)
     
-    # web search
-    for q in search_queries:
-        docs = tavily_search(q, 4)
-        print(f'q: {q}, WEB: {docs}')
-        
-        if len(docs):
-            filtered_docs += grade_documents(q, docs)
-    
-    """
-    search = TavilySearchResults(max_results=4)
-    for q in search_queries:
-        response = search.invoke(q)
-        print(f'q: {q}, WEB: {response}')
-                
-        docs = []
-        for r in response:
-            if 'content' in r:                        
-                docs.append(
-                    Document(
-                        page_content=r.get("content"),
-                        metadata={
-                            'name': 'WWW',
-                            'url': r.get("url"),
-                            'from': 'tavily'
-                        },
-                    )
-                )                
-        print('docs from web search: ', docs)
-        
-        if len(docs):
-            filtered_docs += grade_documents(q, docs)    
-    """
-    
+    filtered_docs = state['docs']
     print('filtered_docs: ', filtered_docs)
               
     content = []   
     if len(filtered_docs):
         for d in filtered_docs:
-            content.append(d.page_content)
-        
+            content.append(d.page_content)        
     print('content: ', content)
 
     chat = get_chat()
@@ -976,635 +1021,74 @@ def revise_draft(state: ReflectionState):
     print('--> draft: ', draft)
     print('--> reflection: ', reflection)
     print('--> revised_draft: ', revised_draft)
-        
-    revision_number = state["revision_number"] if state.get("revision_number") is not None else 1
-        
+                
     return {
-        "revised_draft": revised_draft,
-        "revision_number": revision_number
+        "final_answer": revised_draft
     }
-        
-MAX_REVISIONS = 1
-def should_continue(state: ReflectionState, config):
-    print("###### should_continue ######")
-    max_revisions = config.get("configurable", {}).get("max_revisions", MAX_REVISIONS)
-    print("max_revisions: ", max_revisions)
-            
-    if state["revision_number"] > max_revisions:
-        return "end"
-    return "continue"
-    
-def buildReflection():
-    workflow = StateGraph(ReflectionState)
-
-    # Add nodes
-    workflow.add_node("reflect_node", reflect_node)
-    workflow.add_node("revise_draft", revise_draft)
-
-    # Set entry point
-    workflow.set_entry_point("reflect_node")
-        
-    workflow.add_conditional_edges(
-        "revise_draft", 
-        should_continue, 
-        {
-            "end": END, 
-            "continue": "reflect_node"}
-    )
-
-    # Add edges
-    workflow.add_edge("reflect_node", "revise_draft")
-        
-    return workflow.compile()
-    
-# Workflow - Long Writing
-class State(TypedDict):
-    instruction : str
-    planning_steps : List[str]
-    drafts : List[str]
-    final_doc : str
-    word_count : int
-    revised_drafts: Annotated[list, operator.add]
-            
-def plan_node(state: State):
-    print("###### plan ######")
-    instruction = state["instruction"]
-    print('subject: ', instruction)
-        
-    if isKorean(instruction):
-        planner_template = (
-            "당신은 장문 작성에 능숙한 유능한 글쓰기 도우미입니다."
-            "이번 글쓰기는 20,000 단어 이상의 장편을 목표로 합니다."
-            "당신은 글쓰기 지시 사항을 여러 개의 하위 작업으로 나눌 것입니다."
-            "각 하위 작업은 에세이의 한 단락 작성을 안내할 것이며, 해당 단락의 주요 내용과 단어 수 요구 사항을 포함해야 합니다."
-
-            "글쓰기 지시 사항:"
-            "<instruction>"
-            "{instruction}"
-            "<instruction>"
-                
-            "다음 형식으로 나누어 주시기 바랍니다. 각 하위 작업은 한 줄을 차지합니다:"
-            "1. Main Point: [문단의 주요 내용을 자세히 설명하십시오.], Word Count: [Word count requirement, e.g., 800 words]"
-            "2. Main Point: [문단의 주요 내용을 자세히 설명하십시오.], Word Count: [word count requirement, e.g. 1500 words]."
-            "..."
-                
-            "각 하위 작업이 명확하고 구체적인지, 그리고 모든 하위 작업이 작문 지시 사항의 전체 내용을 다루고 있는지 확인하세요."
-            "과제를 너무 세분화하지 마세요. 각 하위 과제의 문단은 500단어 이상 3000단어 이하여야 합니다."
-            "다른 내용은 출력하지 마십시오. 이것은 진행 중인 작업이므로 열린 결론이나 다른 수사학적 표현을 생략하십시오."                
-        )
-    else:
-        planner_template = (
-            "You are a helpful assistant highly skilled in long-form writing."
-            "This writing aims for a novel of over 20,000 words."
-            "You will break down the writing instruction into multiple subtasks."
-            "Each subtask will guide the writing of one paragraph in the essay, and should include the main points and word count requirements for that paragraph."
-
-            "The writing instruction is as follows:"
-            "<instruction>"
-            "{instruction}"
-            "<instruction>"
-                
-            "Please break it down in the following format, with each subtask taking up one line:"
-            "1. Main Point: [Describe the main point of the paragraph, in detail], Word Count: [Word count requirement, e.g., 800 words]"
-            "2. Main Point: [Describe the main point of the paragraph, in detail], Word Count: [word count requirement, e.g. 1500 words]."
-            "..."
-                
-            "Make sure that each subtask is clear and specific, and that all subtasks cover the entire content of the writing instruction."
-            "Do not split the subtasks too finely; each subtask's paragraph should be no less than 500 words and no more than 3000 words."
-            "Do not output any other content. As this is an ongoing work, omit open-ended conclusions or other rhetorical hooks."                
-        )
-        
-    planner_prompt = ChatPromptTemplate([
-        ('human', planner_template) 
-    ])
-                
-    chat = get_chat()
-        
-    planner = planner_prompt | chat
-    
-    response = planner.invoke({"instruction": instruction})
-    print('response: ', response.content)
-    
-    plan = response.content.strip().replace('\n\n', '\n')
-    planning_steps = plan.split('\n')        
-    print('planning_steps: ', planning_steps)
-            
-    return {
-        "instruction": instruction,
-        "planning_steps": planning_steps
-    }
-        
-def execute_node(state: State):
-    print("###### write (execute) ######")        
-    instruction = state["instruction"]
-    planning_steps = state["planning_steps"]
-    print('instruction: ', instruction)
-    print('planning_steps: ', planning_steps)
-        
-    if isKorean(instruction):
-        write_template = (
-            "당신은 훌륭한 글쓰기 도우미입니다." 
-            "아래와 같이 원본 글쓰기 지시사항과 계획한 글쓰기 단계를 제공하겠습니다."
-            "또한 제가 이미 작성한 텍스트를 제공합니다."
-
-            "글쓰기 지시사항:"
-            "<instruction>"
-            "{intructions}"
-            "</instruction>"
-
-            "글쓰기 단계:"
-            "<plan>"
-            "{plan}"
-            "</plan>"
-
-            "이미 작성한 텍스트:"
-            "<text>"
-            "{text}"
-            "</text>"
-
-            "글쓰기 지시 사항, 글쓰기 단계, 이미 작성된 텍스트를 참조하여 다음 단계을 계속 작성합니다."
-            "다음 단계:"
-            "<step>"
-            "{STEP}"
-            "</step>"
-                
-            "글이 끊어지지 않고 잘 이해되도록 하나의 문단을 충분히 길게 작성합니다."
-            "필요하다면 앞에 작은 부제를 추가할 수 있습니다."
-            "이미 작성된 텍스트를 반복하지 말고 작성한 문단만 출력하세요."                
-            "Markdown 포맷으로 서식을 작성하세요."
-            "최종 결과에 <result> tag를 붙여주세요."
-        )
-    else:    
-        write_template = (
-            "You are an excellent writing assistant." 
-            "I will give you an original writing instruction and my planned writing steps."
-            "I will also provide you with the text I have already written."
-            "Please help me continue writing the next paragraph based on the writing instruction, writing steps, and the already written text."
-
-            "Writing instruction:"
-            "<instruction>"
-            "{intructions}"
-            "</instruction>"
-
-            "Writing steps:"
-            "<plan>"
-            "{plan}"
-            "</plan>"
-
-            "Already written text:"
-            "<text>"
-            "{text}"
-            "</text>"
-
-            "Please integrate the original writing instruction, writing steps, and the already written text, and now continue writing {STEP}."
-            "If needed, you can add a small subtitle at the beginning."
-            "Remember to only output the paragraph you write, without repeating the already written text."
-                
-            "Use markdown syntax to format your output:"
-            "- Headings: # for main, ## for sections, ### for subsections, etc."
-            "- Lists: * or - for bulleted, 1. 2. 3. for numbered"
-            "- Do not repeat yourself"
-            "Provide the final answer with <result> tag."
-        )
-
-    write_prompt = ChatPromptTemplate([
-        ('human', write_template)
-    ])
-        
-    text = ""
-    drafts = []
-    if len(planning_steps) > 50:
-        print("plan is too long")
-        # print(plan)
-        return
-        
-    for idx, step in enumerate(planning_steps):
-        # Invoke the write_chain
-        chat = get_chat()
-        write_chain = write_prompt | chat
-            
-        result = write_chain.invoke({
-            "intructions": instruction,
-            "plan": planning_steps,
-            "text": text,
-            "STEP": step
-        })            
-        output = result.content
-        # print('output: ', output)
-            
-        draft = output[output.find('<result>')+8:len(output)-9]
-        # print('draft: ', draft) 
-                       
-        if draft.find('#')!=-1 and draft.find('#')!=0:
-            draft = draft[draft.find('#'):]
-            
-        print(f"--> step:{step}")
-        print(f"--> {draft}")
-                
-        drafts.append(draft)
-        text += draft + '\n\n'
-
-    return {
-        "instruction": instruction,
-        "drafts": drafts
-    }
-
-def reflect_draft(conn, reflection_app, idx, draft):     
-    inputs = {
-        "draft": draft
-    }    
-    config = {
-        "recursion_limit": 50,
-        "max_revisions": MAX_REVISIONS
-    }
-    output = reflection_app.invoke(inputs, config)
-        
-    result = {
-        "revised_draft": output['revised_draft'],
-        "idx": idx
-    }
-            
-    conn.send(result)    
-    conn.close()
-        
-def reflect_drafts_using_parallel_processing(drafts):
-    revised_drafts = drafts
-        
-    processes = []
-    parent_connections = []
-        
-    reflection_app = buildReflection()
-                
-    for idx, draft in enumerate(drafts):
-        parent_conn, child_conn = Pipe()
-        parent_connections.append(parent_conn)
-            
-        process = Process(target=reflect_draft, args=(child_conn, reflection_app, idx, draft))
-        processes.append(process)
-            
-    for process in processes:
-        process.start()
-                
-    for parent_conn in parent_connections:
-        result = parent_conn.recv()
-
-        if result is not None:
-            print('result: ', result)
-            revised_drafts[result['idx']] = result['revised_draft']
-
-    for process in processes:
-        process.join()
-                
-    final_doc = ""   
-    for revised_draft in revised_drafts:
-        final_doc += revised_draft + '\n\n'
-        
-    return final_doc
-
-def get_subject(query):
-    system = (
-        "Extract the subject of the question in 6 words or fewer."
-    )
-        
-    human = "<question>{question}</question>"
-        
-    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
-    # print('prompt: ', prompt)
-        
-    chat = get_chat()
-    chain = prompt | chat    
-    try: 
-        result = chain.invoke(
-            {
-                "question": query
-            }
-        )        
-        subject = result.content
-        # print('the subject of query: ', subject)
-            
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                    
-        raise Exception ("Not able to request to LLM")        
-    return subject
-    
-def markdown_to_html(body):
-    html = f"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <md-block>
-    </md-block>
-    <script type="module" src="https://md-block.verou.me/md-block.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.css" integrity="sha512-n5zPz6LZB0QV1eraRj4OOxRbsV7a12eAGfFcrJ4bBFxxAwwYDp542z5M0w24tKPEhKk2QzjjIpR5hpOjJtGGoA==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-</head>
-<body>
-    <div class="markdown-body">
-        <md-block>{body}
-        </md-block>
-    </div>
-</body>
-</html>"""        
-    return html
-
-def revise_answers(state: State):
-    print("###### revise_answers ######")
-    drafts = state["drafts"]        
-    print('drafts: ', drafts)
-        
-    # reflection
-    if multi_region == 'enable':  # parallel processing
-        final_doc = reflect_drafts_using_parallel_processing(drafts)
-    else:
-        reflection_app = buildReflection()
-                
-        final_doc = ""   
-        for idx, draft in enumerate(drafts):
-            inputs = {
-                "draft": draft
-            }    
-            config = {
-                "recursion_limit": 50,
-                "max_revisions": MAX_REVISIONS
-            }
-            output = reflection_app.invoke(inputs, config)
-                
-            final_doc += output['revised_draft'] + '\n\n'
-
-    subject = get_subject(state['instruction'])
-    subject = subject.replace(" ","_")
-    subject = subject.replace("?","")
-    subject = subject.replace("!","")
-    subject = subject.replace(".","")
-    subject = subject.replace(":","")
-        
-    # markdown file
-    markdown_key = 'markdown/'+f"{subject}.md"
-    # print('markdown_key: ', markdown_key)
-        
-    markdown_body = f"## {state['instruction']}\n\n"+final_doc
-                
-    s3_client = boto3.client('s3')  
-    response = s3_client.put_object(
-        Bucket=s3_bucket,
-        Key=markdown_key,
-        ContentType='text/markdown',
-        Body=markdown_body.encode('utf-8')
-    )
-    # print('response: ', response)
-        
-    markdown_url = f"{path}{markdown_key}"
-    print('markdown_url: ', markdown_url)
-        
-    # html file
-    html_key = 'markdown/'+f"{subject}.html"
-        
-    html_body = markdown_to_html(markdown_body)
-    print('html_body: ', html_body)
-        
-    s3_client = boto3.client('s3')  
-    response = s3_client.put_object(
-        Bucket=s3_bucket,
-        Key=html_key,
-        ContentType='text/html',
-        Body=html_body
-    )
-    # print('response: ', response)
-        
-    html_url = f"{path}{html_key}"
-    print('html_url: ', html_url)
-        
-    return {
-        "final_doc": final_doc+f"\n<a href={html_url} target=_blank>[미리보기 링크]</a>\n<a href={markdown_url} download=\"{subject}.md\">[다운로드 링크]</a>"
-    }
-        
-def buildLongFormWriting():
-    workflow = StateGraph(State)
-
-    # Add nodes
-    workflow.add_node("plan_node", plan_node)
-    workflow.add_node("execute_node", execute_node)
-    workflow.add_node("revise_answers", revise_answers)
-
-    # Set entry point
-    workflow.set_entry_point("plan_node")
-
-    # Add edges
-    workflow.add_edge("plan_node", "execute_node")
-    workflow.add_edge("execute_node", "revise_answers")
-    workflow.add_edge("revise_answers", END)
-        
-    return workflow.compile()
-
-def run_long_form_writing_agent(connectionId, requestId, query):    
-    app = buildLongFormWriting()
-    
-    # Run the workflow
-    isTyping(connectionId, requestId)        
-    inputs = {
-        "instruction": query
-    }    
-    config = {
-        "recursion_limit": 50
-    }
-    
-    output = app.invoke(inputs, config)
-    print('output (run_long_form_writing_agent): ', output)
-    
-    return output['final_doc']
 
 ####################### LangGraph #######################
-# Long form Writing Agent (Map Reduce Parallel) <-- Not recommended, sometimes it give a empty state by Send() API.
+# RAG with Reflection
 #########################################################
-
-def continue_to_revise(state: State):
-    print('###### continue_to_revise ######')
-    print('state (continue_to_revise): ', state)
-    
-    revise_request = []
-    for idx, draft in enumerate(state["drafts"]):
-        print(f"draft[{idx}]: {draft}")
-        
-        if draft:
-            revise_request.append(Send("revise_node", {
-                "draft": draft,
-                "idx": idx
-            }))
-    
-    print('revise_request: ', revise_request)
-    
-    return revise_request
-
-class ReviseState(TypedDict):
-    draft: str
-    idx: int
-    
-def revise_node(state: ReviseState):
-    if not "idx" or not "draft" in state:
-        print("state is None")
-        print(state)        
-        return 
-    
-    print(f"###### revise_node {state['idx']} ######")
-    print(f"revise_node --> draft[{state['idx']}]: {state['draft']}")    
-    
-    draft = state["draft"]        
-            
-    reflection_app = buildReflection()
-                    
-    inputs = {
-        "draft": draft
-    }    
-    config = {
-        "recursion_limit": 50,
-        "max_revisions": MAX_REVISIONS
-    }
-    output = reflection_app.invoke(inputs, config)
-    # print('output (revise_node): ', output)
-                    
-    revised_draft = output['revised_draft']
-    print('revised_draft (revise_node): ', revised_draft)
-        
-    return {
-        "revised_drafts": revised_draft
-    }
-    
-def save_answer(state: State):
-    print("###### save_answer ######")
-    revised_drafts = state["revised_drafts"]        
-    print('revised_drafts: ', revised_drafts)
-    
-    instruction = state['instruction']
-    print('instruction: ', instruction)
-        
-    final_doc = ""
-    for idx, revised_draft in enumerate(revised_drafts):
-        if revised_draft:
-            final_doc += revised_draft + '\n\n'
-
-    subject = get_subject(instruction)
-    subject = subject.replace(" ","_")
-    subject = subject.replace("?","")
-    subject = subject.replace("!","")
-    subject = subject.replace(".","")
-    subject = subject.replace(":","")
-        
-    # markdown file
-    markdown_key = 'markdown/'+f"{subject}.md"
-    # print('markdown_key: ', markdown_key)
-        
-    markdown_body = f"## {instruction}\n\n"+final_doc
                 
-    s3_client = boto3.client('s3')  
-    response = s3_client.put_object(
-        Bucket=s3_bucket,
-        Key=markdown_key,
-        ContentType='text/markdown',
-        Body=markdown_body.encode('utf-8')
-    )
-    # print('response: ', response)
-        
-    markdown_url = f"{path}{markdown_key}"
-    print('markdown_url: ', markdown_url)
-        
-    # html file
-    html_key = 'markdown/'+f"{subject}.html"
-        
-    html_body = markdown_to_html(markdown_body)
-    print('html_body: ', html_body)
-
-    s3_client = boto3.client('s3')  
-    response = s3_client.put_object(
-        Bucket=s3_bucket,
-        Key=html_key,
-        ContentType='text/html',
-        Body=html_body
-    )
-    # print('response: ', response)
-        
-    html_url = f"{path}{html_key}"
-    print('html_url: ', html_url)
-        
-    return {
-        "final_doc": final_doc+f"\n<a href={html_url} target=_blank>[미리보기 링크]</a>\n<a href={markdown_url} download=\"{subject}.md\">[다운로드 링크]</a>"
-    }    
-    
-def buildLongFormWritingMapReduce():
+def buildRagWithReflection():
     workflow = StateGraph(State)
 
     # Add nodes
-    workflow.add_node("plan_node", plan_node)
-    workflow.add_node("execute_node", execute_node)
+    workflow.add_node("retrieve_node", retrieve_node)
+    workflow.add_node("generate_node", generate_node)
+    workflow.add_node("reflect_node", reflect_node)
     workflow.add_node("revise_node", revise_node)
-    workflow.add_node("save_answer", save_answer)
-    
+
     # Set entry point
-    workflow.set_entry_point("plan_node")
+    workflow.set_entry_point("retrieve_node")
         
-    workflow.add_conditional_edges(
-        "execute_node", 
-        continue_to_revise, 
-        ["revise_node"]
-    )
-    
     # Add edges
-    workflow.add_edge("plan_node", "execute_node")
-    workflow.add_edge("execute_node", "revise_node")
-    workflow.add_edge("revise_node", "save_answer")
-    workflow.add_edge("save_answer", END)
+    workflow.add_edge("retrieve_node", "generate_node")
+    workflow.add_edge("generate_node", "reflect_node")
+    workflow.add_edge("reflect_node", "revise_node")
+    workflow.add_edge("revise_node", END)
         
     return workflow.compile()
-
-def run_long_form_writing_agent_map_reduce(connectionId, requestId, query):    
-    app = buildLongFormWritingMapReduce()
+    
+def run_rag_with_reflection(connectionId, requestId, query):    
+    app = buildRagWithReflection()
     
     # Run the workflow
     isTyping(connectionId, requestId)        
     inputs = {
-        "instruction": query
+        "query": query
     }    
     config = {
         "recursion_limit": 50
     }
     
     output = app.invoke(inputs, config)
-    print('output (run_long_form_writing_agent_map_reduce): ', output)
+    print('output (run_rag_with_reflection): ', output)
     
-    return output['final_doc']
-                
+    return output['final_answer']
+
+####################### LangGraph #######################
+# RAG with query trasnformation
 #########################################################
-def traslation(chat, text, input_language, output_language):
-    system = (
-        "You are a helpful assistant that translates {input_language} to {output_language} in <article> tags. Put it in <result> tags."
-    )
-    human = "<article>{text}</article>"
-    
-    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
-    # print('prompt: ', prompt)
-    
-    chain = prompt | chat    
-    try: 
-        result = chain.invoke(
-            {
-                "input_language": input_language,
-                "output_language": output_language,
-                "text": text,
-            }
-        )
-        
-        msg = result.content
-        # print('translated text: ', msg)
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                    
-        raise Exception ("Not able to request to LLM")
 
-    return msg[msg.find('<result>')+8:len(msg)-9] # remove <result> tag
+def run_rag_with_transformation(connectionId, requestId, query):    
+    app = buildRagWithReflection()
+    
+    # Run the workflow
+    isTyping(connectionId, requestId)        
+    inputs = {
+        "query": query
+    }    
+    config = {
+        "recursion_limit": 50
+    }
+    
+    output = app.invoke(inputs, config)
+    print('output (run_rag_with_reflection): ', output)
+    
+    return output['final_answer']
 
+#########################################################                    
 def revise_question(connectionId, requestId, chat, query):    
     global history_length, token_counter_history    
     history_length = token_counter_history = 0
@@ -1797,38 +1281,6 @@ def translate_text(chat, text):
 
     return msg[msg.find('<result>')+8:len(msg)-9] # remove <result> tag
 
-def check_grammer(chat, text):
-    if isKorean(text)==True:
-        system = (
-            "다음의 <article> tag안의 문장의 오류를 찾아서 설명하고, 오류가 수정된 문장을 답변 마지막에 추가하여 주세요."
-        )
-    else: 
-        system = (
-            "Here is pieces of article, contained in <article> tags. Find the error in the sentence and explain it, and add the corrected sentence at the end of your answer."
-        )
-        
-    human = "<article>{text}</article>"
-    
-    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
-    print('prompt: ', prompt)
-    
-    chain = prompt | chat    
-    try: 
-        result = chain.invoke(
-            {
-                "text": text
-            }
-        )
-        
-        msg = result.content
-        print('result of grammer correction: ', msg)
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                    
-        raise Exception ("Not able to request to LLM")
-    
-    return msg
-
 def use_multimodal(img_base64, query):    
     multimodal = get_multimodal()
     
@@ -1993,18 +1445,12 @@ def getResponse(connectionId, jsonBody):
                 if convType == 'normal':      # normal
                     msg = general_conversation(connectionId, requestId, chat, text)                  
 
-                elif convType == 'long-form-writing-agent':  # long writing
-                    msg = run_long_form_writing_agent(connectionId, requestId, text)
+                elif convType == 'rag-with-reflection':  # rag-with-reflection
+                    msg = run_rag_with_reflection(connectionId, requestId, text)
 
-                elif convType == 'long-form-writing-agent-map-reduce':  # long writing (map reduce)
-                    msg = run_long_form_writing_agent_map_reduce(connectionId, requestId, text)
+                elif convType == 'rag-with-transformation':  # rag-with-transformation
+                    msg = run_rag_with_transformation(connectionId, requestId, text)
 
-                elif convType == "translation":
-                    msg = translate_text(chat, text) 
-                
-                elif convType == "grammar":
-                    msg = check_grammer(chat, text)  
-                                    
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)
                 
