@@ -816,19 +816,6 @@ def traslation(chat, text, input_language, output_language):
 
     return msg[msg.find('<result>')+8:len(msg)-9] # remove <result> tag
 
-def retrieve(query):
-    relevant_docs = retrieve_from_knowledge_base(query)
-    
-    # print(f'q: {query}, RAG: {relevant_docs}')
-    print(f'--> query: {query}, length: {len(relevant_docs)}')
-    
-    filtered_docs = []
-    if len(relevant_docs):
-        filtered_docs = grade_documents(query, relevant_docs)
-    print('length of filtered_docs (retrieve_node): ', len(filtered_docs))
-    
-    return filtered_docs
-    
 ####################### LangGraph #######################
 # RAG functions
 #########################################################
@@ -1012,12 +999,6 @@ def revise_node(state: State):
     print('draft: ', draft)
     print('reflection: ', reflection)
     print('sub_queries: ', sub_queries)
-    
-    docs = []
-    for i, sub_query in enumerate(sub_queries):
-        doc = retrieve(sub_query)
-        print_doc(i, doc)        
-        docs += doc
         
     if isKorean(draft):
         revise_template = (
@@ -1153,6 +1134,7 @@ def buildRagWithReflection():
     workflow.add_node("retrieve_node", retrieve_node)
     workflow.add_node("generate_node", generate_node)
     workflow.add_node("reflect_node", reflect_node)
+    workflow.add_node("retrieve_query", retrieve_query)    
     workflow.add_node("revise_node", revise_node)
 
     # Set entry point
@@ -1160,7 +1142,15 @@ def buildRagWithReflection():
     
     workflow.add_edge("retrieve_node", "generate_node")
     workflow.add_edge("generate_node", "reflect_node")
-    workflow.add_edge("reflect_node", "revise_node")
+    
+    workflow.add_conditional_edges(
+        "reflect_node", 
+        continue_to_retrieve_query, 
+        ["retrieve_query"]
+    )
+        
+    # Add edges
+    workflow.add_edge("retrieve_query", "revise_node")
     
     workflow.add_conditional_edges(
         "revise_node", 
