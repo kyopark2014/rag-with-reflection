@@ -8,7 +8,12 @@ RAG의 결과가 충분한 context를 포함하고 있지 않은 경우에 [Quer
 
 여기서에서는 Reflection을 이용한 RAG의 성능 강화에 대해 설명합니다. Reflection을 통해 RAG로 얻어진 결과에서 새로운 sub-queries들을 생성하여, 답변에 충분한 context를 제공할 수 있습닏. 따라서, Query transformation와 유사하게 질문과 관련된 문서를 조회할 수 있습니다. 
 
+## RAG with Reflection
+
+![image](./chart/rag-with-reflection.png)
+
 
 ## Retransformation
 
 ![image](./chart/retransformation.png)
+
