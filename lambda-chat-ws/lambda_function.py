@@ -643,8 +643,8 @@ def grade_documents_using_parallel_processing(question, documents):
     return filtered_docs
     
 def print_doc(doc):
-    if len(doc.page_content)>=100:
-        text = doc.page_content[:100]
+    if len(doc.page_content)>=50:
+        text = doc.page_content[:50]
     else:
         text = doc.page_content
             
@@ -663,8 +663,7 @@ def grade_documents(question, documents):
         chat = get_chat()
         retrieval_grader = get_retrieval_grader(chat)
         for doc in documents:
-            # print('doc: ', doc)
-            print_doc(doc)
+            # print_doc(doc)
             
             score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
             # print("score: ", score)
