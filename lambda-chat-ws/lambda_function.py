@@ -556,7 +556,7 @@ def retrieve_from_knowledge_base(query):
             pos = link.find(f"/{doc_prefix}")
             name = link[pos+len(doc_prefix)+1:]
             encoded_name = parse.quote(name)
-            print('name:', name)
+            # print('name:', name)
             link = f"{path}{doc_prefix}{encoded_name}"
             
         elif "webLocation" in document.metadata["location"]:
@@ -649,7 +649,7 @@ def print_doc(i, doc):
     else:
         text = doc.page_content
             
-    print(f"{i} --> doc: {text}, metadata:{doc.metadata}")
+    print(f"{i}: {text}, metadata:{doc.metadata}")
     
 def grade_documents(question, documents):
     print("###### grade_documents ######")
@@ -664,7 +664,7 @@ def grade_documents(question, documents):
         chat = get_chat()
         retrieval_grader = get_retrieval_grader(chat)
         for i, doc in enumerate(documents):
-            # print_doc(i, doc)
+            print_doc(i, doc)
             
             score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
             # print("score: ", score)
