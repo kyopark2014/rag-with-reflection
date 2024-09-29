@@ -643,8 +643,8 @@ def grade_documents_using_parallel_processing(question, documents):
     return filtered_docs
     
 def print_doc(doc):
-    if len(doc.page_content)>=50:
-        text = doc.page_content[:50]
+    if len(doc.page_content)>=100:
+        text = doc.page_content[:100]
     else:
         text = doc.page_content
             
@@ -833,7 +833,7 @@ def retrieve_node(state: State):
     relevant_docs = retrieve_from_knowledge_base(query)
     
     # print(f'q: {query}, RAG: {relevant_docs}')
-    print(f'query: {query}, length: {len(relevant_docs)}')
+    print(f'--> query: {query}, length: {len(relevant_docs)}')
     
     filtered_docs = []
     if len(relevant_docs):
@@ -853,10 +853,10 @@ def retrieve_query(state: RetrieveState):
     relevant_docs = retrieve_from_knowledge_base(sub_query)
     
     # print(f'sub_query: {sub_query}, RAG: {relevant_docs}')
-    print(f'q: {sub_query}')
+    print(f'--> sub_query: {sub_query}, length: {len(relevant_docs)}')
     for i, doc in enumerate(relevant_docs):
-        if len(doc.page_content)>=50:
-            print(f"{i}, doc: {doc.page_content[:50]}")
+        if len(doc.page_content)>=100:
+            print(f"{i}, doc: {doc.page_content[:100]}")
         else:
             print(f"{i}, doc: {doc.page_content}")
     
@@ -951,6 +951,7 @@ def reflect_node(state: State):
             print('reflection: ', parsed_info.reflection)            
             print('sub_queries: ', sub_queries)     
         
+            """
             if isKorean(draft):
                 translated_search = []
                 for q in sub_queries:
@@ -965,6 +966,7 @@ def reflect_node(state: State):
                 sub_queries += translated_search
 
             print('sub_queries (mixed): ', sub_queries)
+            """
             break
         
     return {
