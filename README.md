@@ -11,4 +11,4 @@ RAG의 결과가 충분한 context를 포함하고 있지 않은 경우에 [Quer
 
 ## Retransformation
 
-![image](https://github.com/user-attachments/assets/f6374691-44d4-44cf-ba08-646fea159846)
+![image](./chart/retransformation.png)
