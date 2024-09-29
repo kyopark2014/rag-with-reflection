@@ -908,8 +908,14 @@ class ResearchKor(BaseModel):
     
 def reflect_node(state: State):
     print("###### reflect ######")
-    draft = state['draft']
-    print('draft: ', draft)
+    print('state: ', state)
+    
+    if 'draft' in state['draft']:
+        draft = state['draft']
+        print('draft: ', draft)
+    else:
+        draft = ""
+        print('No draft')
     
     reflection = []
     sub_queries = []
