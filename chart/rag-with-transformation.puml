@@ -30,35 +30,24 @@ LAYOUT_WITH_LEGEND()
 'System(start, "Start")
 'System(END, "END")
 
-Container(rewrite_node, "rewrite_node")  
 
-Boundary(c1, "") {
-    Container(decompose_node, "decompose_node")
+Boundary(c1, "Transformation") {
+    Container(rewrite_node, "rewrite_node")  
+    Container(decompose_node, "decompose_node")    
 
-    SystemQueue_Ext(continue_to_retrieve_node, "continue_to_retrieve_node")
-
-    Container(retrieve_node1, "retrieve_node")
-
-    Container(retrieve_node2, "retrieve_node")
-
-    Container(retrieve_node3, "retrieve_node")
+    Container(retrieve_node, "retrieve_node")
 }
+
+
 Container(generate_node, "generate_node")
 
 Rel(Start, rewrite_node, "query")
 
-Rel(rewrite_node, decompose_node, "modified query")
+Rel(rewrite_node, decompose_node, "revised query")
 
-Rel(decompose_node, continue_to_retrieve_node, "sub-queries")
+Rel(decompose_node, retrieve_node, "sub-queries")
 
-
-Rel(continue_to_retrieve_node, retrieve_node1, "sub-query\n1")
-Rel(continue_to_retrieve_node, retrieve_node2, "sub-query\n2")
-Rel(continue_to_retrieve_node, retrieve_node3, "sub-query\n3")
-
-Rel(retrieve_node1, generate_node, "doc\n1")
-Rel(retrieve_node2, generate_node, "doc\n2")
-Rel(retrieve_node3, generate_node, "doc\n3")
+Rel(retrieve_node, generate_node, "docs")
 
 Rel(generate_node, END, "result")
 
