@@ -664,13 +664,13 @@ def grade_documents(question, documents):
         retrieval_grader = get_retrieval_grader(chat)
         for doc in documents:
             # print('doc: ', doc)
-            print_doc(doc)
+            # print_doc(doc)
             
             score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
-            print("score: ", score)
+            # print("score: ", score)
             
             grade = score.binary_score
-            print("grade: ", grade)
+            # print("grade: ", grade)
             # Document relevant
             if grade.lower() == "yes":
                 print("---GRADE: DOCUMENT RELEVANT---")
@@ -910,14 +910,9 @@ class ResearchKor(BaseModel):
     
 def reflect_node(state: State):
     print("###### reflect ######")
-    print('state: ', state)
-    
-    if 'draft' in state['draft']:
-        draft = state['draft']
-        print('draft: ', draft)
-    else:
-        draft = ""
-        print('No draft')
+    #print('state: ', state)    
+    draft = state['draft']
+    print('draft: ', draft)
     
     reflection = []
     sub_queries = []
