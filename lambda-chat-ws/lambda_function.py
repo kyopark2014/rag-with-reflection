@@ -1073,7 +1073,7 @@ def decompose_node(state: State):
 # RAG with Reflection
 #########################################################
 
-def continue_to_retrieve(state: State):
+def continue_to_retrieve_query(state: State):
     print('###### continue_to_retrieve ######')
     print('state (continue_to_retrieve): ', state)
     
@@ -1082,7 +1082,7 @@ def continue_to_retrieve(state: State):
         print(f"draft[{idx}]: {sub_query}")
         
         if sub_query:
-            revise_request.append(Send("revise_node", {
+            revise_request.append(Send("retrieve_query", {
                 "sub_query": sub_query
             }))
     
@@ -1117,7 +1117,7 @@ def buildRagWithReflection():
     
     workflow.add_conditional_edges(
         "reflect_node", 
-        continue_to_retrieve, 
+        continue_to_retrieve_query, 
         ["retrieve_query"]
     )
         
@@ -1155,6 +1155,23 @@ def run_rag_with_reflection(connectionId, requestId, query):
 # RAG with query trasnformation
 #########################################################
 
+def continue_to_retrieve_node(state: State):
+    print('###### continue_to_retrieve_query ######')
+    print('state (continue_to_retrieve_query): ', state)
+    
+    revise_request = []
+    for idx, sub_query in enumerate(state["sub_queries"]):
+        print(f"draft[{idx}]: {sub_query}")
+        
+        if sub_query:
+            revise_request.append(Send("retrieve_node", {
+                "sub_query": sub_query
+            }))
+    
+    print('revise_request: ', revise_request)
+    
+    return revise_request
+
 def buildRagWithTransformation():
     workflow = StateGraph(State)
 
@@ -1171,7 +1188,7 @@ def buildRagWithTransformation():
     
     workflow.add_conditional_edges(
         "decompose_node", 
-        continue_to_retrieve, 
+        continue_to_retrieve_node, 
         ["retrieve_node"]
     )
 
