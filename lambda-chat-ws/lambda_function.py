@@ -825,7 +825,7 @@ class State(TypedDict):
     draft: str
     docs: List[str]
     reflection : List[str]
-    search_queries : List[str]
+    sub_queries : List[str]
     revision_number: int
 
 def retrieve_node(state: State):
@@ -856,7 +856,7 @@ def retrieve_query(state: RetrieveState):
         filtered_docs = grade_documents(sub_query, relevant_docs)
 
     # web search
-    #for q in search_queries:
+    #for q in sub_queries:
     #    docs = tavily_search(q, 4)
     #    print(f'q: {q}, WEB: {docs}')
         
@@ -889,7 +889,7 @@ class Research(BaseModel):
     """Provide reflection and then follow up with search queries to improve the writing."""
 
     reflection: Reflection = Field(description="Your reflection on the initial writing.")
-    search_queries: list[str] = Field(
+    sub_queries: list[str] = Field(
         description="1-3 search queries for researching improvements to address the critique of your current writing."
     )
 
@@ -902,7 +902,7 @@ class ResearchKor(BaseModel):
     """글쓰기를 개선하기 위한 검색 쿼리를 제공합니다."""
 
     reflection: ReflectionKor = Field(description="작성된 글에 대한 평가")
-    search_queries: list[str] = Field(
+    sub_queries: list[str] = Field(
         description="현재 글과 관련된 3개 이내의 검색어"
     )
     
@@ -912,7 +912,7 @@ def reflect_node(state: State):
     print('draft: ', draft)
     
     reflection = []
-    search_queries = []
+    sub_queries = []
     for attempt in range(5):
         chat = get_chat()
         
@@ -928,14 +928,14 @@ def reflect_node(state: State):
             parsed_info = info['parsed']
             # print('reflection: ', parsed_info.reflection)
             reflection = [parsed_info.reflection.missing, parsed_info.reflection.advisable]
-            search_queries = parsed_info.search_queries
+            sub_queries = parsed_info.sub_queries
                 
             print('reflection: ', parsed_info.reflection)            
-            print('search_queries: ', search_queries)     
+            print('sub_queries: ', sub_queries)     
         
             if isKorean(draft):
                 translated_search = []
-                for q in search_queries:
+                for q in sub_queries:
                     chat = get_chat()
                     if isKorean(q):
                         search = traslation(chat, q, "Korean", "English")
@@ -944,14 +944,14 @@ def reflect_node(state: State):
                     translated_search.append(search)
                         
                 print('translated_search: ', translated_search)
-                search_queries += translated_search
+                sub_queries += translated_search
 
-            print('search_queries (mixed): ', search_queries)
+            print('sub_queries (mixed): ', sub_queries)
             break
         
     return {
         "reflection": reflection,
-        "search_queries": search_queries,
+        "sub_queries": sub_queries,
     }
 
 def revise_node(state: State):   
@@ -959,10 +959,10 @@ def revise_node(state: State):
         
     draft = state['draft']
     reflection = state['reflection']
-    search_queries = state['search_queries']
+    sub_queries = state['sub_queries']
     print('draft: ', draft)
     print('reflection: ', reflection)
-    print('search_queries: ', search_queries)
+    print('sub_queries: ', sub_queries)
         
     if isKorean(draft):
         revise_template = (
@@ -1045,6 +1045,22 @@ def revise_node(state: State):
         "revision_number": revision_number + 1
     }
 
+def rewrite_node(state: State):
+    print("###### rewrite ######")
+    query = state['query']
+    
+    return {
+        "query": query
+    }
+    
+def decompose_node(state: State):
+    print("###### decompose ######")
+    query = state['query']
+    
+    return {
+        "sub_queries": [query]
+    }    
+    
 ####################### LangGraph #######################
 # RAG with Reflection
 #########################################################
@@ -1054,7 +1070,7 @@ def continue_to_retrieve(state: State):
     print('state (continue_to_retrieve): ', state)
     
     revise_request = []
-    for idx, sub_query in enumerate(state["search_queries"]):
+    for idx, sub_query in enumerate(state["sub_queries"]):
         print(f"draft[{idx}]: {sub_query}")
         
         if sub_query:
@@ -1074,7 +1090,7 @@ def should_to_reflection(state: State, config):
     if state["revision_number"] > max_revisions:
         return "end"
     return "continue"
-                
+
 def buildRagWithReflection():
     workflow = StateGraph(State)
 
@@ -1131,8 +1147,34 @@ def run_rag_with_reflection(connectionId, requestId, query):
 # RAG with query trasnformation
 #########################################################
 
+def buildRagWithTransformation():
+    workflow = StateGraph(State)
+
+    # Add nodes
+    workflow.add_node("rewrite_node", rewrite_node)
+    workflow.add_node("decompose_node", decompose_node)
+    workflow.add_node("retrieve_node", retrieve_node)
+    workflow.add_node("generate_node", generate_node)
+    
+    # Set entry point
+    workflow.set_entry_point("rewrite_node")
+    
+    workflow.add_edge("rewrite_node", "decompose_node")
+    
+    workflow.add_conditional_edges(
+        "decompose_node", 
+        continue_to_retrieve, 
+        ["retrieve_node"]
+    )
+
+    # Add edges
+    workflow.add_edge("retrieve_node", "generate_node")
+    workflow.add_edge("generate_node", END)
+            
+    return workflow.compile()
+
 def run_rag_with_transformation(connectionId, requestId, query):    
-    app = buildRagWithReflection()
+    app = buildRagWithTransformation()
     
     # Run the workflow
     isTyping(connectionId, requestId)        
