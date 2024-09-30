@@ -985,7 +985,7 @@ def parallel_retriever(state: State):
     sub_queries = state['sub_queries']
     print('sub_queries: ', sub_queries)
     
-    relevant_doc = []
+    relevant_docs = []
     processes = []
     parent_connections = []
     
@@ -1005,14 +1005,34 @@ def parallel_retriever(state: State):
         print('docs: ', docs)
         
         for doc in docs:
-            relevant_doc.append(doc)
+            relevant_docs.append(doc)
 
     for process in processes:
         process.join()    
-    print('relevant_doc: ', relevant_doc)
+    print('relevant_docs: ', relevant_docs)
+    
+    # duplication checker
+    contentList = []
+    update_docs = []
+    top_k = 8
+    
+    print('length of relevant_docs:', len(relevant_docs))
+    for doc in relevant_docs:            
+        # print('excerpt: ', doc['metadata']['excerpt'])
+            if doc.page_content in contentList:
+                print('duplicated!')
+                continue
+            contentList.append(doc.page_content)
+            update_docs.append(doc)
+            
+            if len(update_docs)>=top_k:
+                break        
+    
+    print('length of update_docs:', len(update_docs))
+    print('update_docs:', update_docs)
 
     return {
-        "relevant_docs": relevant_doc
+        "relevant_docs": update_docs
     }
 
 def revise_node(state: State):   
