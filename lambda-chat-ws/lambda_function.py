@@ -842,10 +842,10 @@ def parallel_grader(state: State):
         process.start()
             
     for parent_conn in parent_connections:
-        relevant_doc = parent_conn.recv()
+        doc = parent_conn.recv()
 
-        if relevant_doc is not None:
-            filtered_docs.append(relevant_doc)
+        if doc is not None:
+            filtered_docs.append(doc)
 
     for process in processes:
         process.join()    
@@ -860,23 +860,22 @@ def parallel_grader(state: State):
         "filtered_docs": filtered_docs
     }    
 
-class RetrieveState(TypedDict):
-    sub_query: str
-
 def generate_node(state: State):
     print("###### generate ######")
     query = state["query"]
-    docs = state["docs"]
+    filtered_docs = state["filtered_docs"]
     print('query: ', query)
-    print('docs: ', docs)
+    print('filtered_docs: ', filtered_docs)
         
     # RAG generation
     rag_chain = get_reg_chain(isKorean(query))
         
-    answer = rag_chain.invoke({"context": docs, "question": query})
+    answer = rag_chain.invoke({"context": filtered_docs, "question": query})
     print('answer: ', answer.content)
             
-    return {"query": query, "draft": answer.content}
+    return {
+        "draft": answer.content
+    }
         
 class Reflection(BaseModel):
     missing: str = Field(description="Critique of what is missing.")
@@ -1154,23 +1153,6 @@ def run_rag_basic(connectionId, requestId, query):
 # RAG with Reflection
 #########################################################
 
-def continue_to_retrieve_query(state: State):
-    print('###### continue_to_retrieve_query ######')
-    print('state (continue_to_retrieve_query): ', state)
-    
-    revise_request = []
-    for idx, sub_query in enumerate(state["sub_queries"]):
-        print(f"draft[{idx}]: {sub_query}")
-        
-        if sub_query:
-            revise_request.append(Send("retrieve_query", {
-                "sub_query": sub_query
-            }))
-    
-    print('revise_request: ', revise_request)
-    
-    return revise_request
-
 def continue_reflection(state: State, config):
     print("###### continue_reflection ######")
     max_revisions = config.get("configurable", {}).get("max_revisions", MAX_REVISIONS)
@@ -1234,45 +1216,24 @@ def run_rag_with_reflection(connectionId, requestId, query):
 # RAG with query trasnformation
 #########################################################
 
-def continue_to_retrieve_node(state: State):
-    print('###### continue_to_retrieve_query ######')
-    print('state (continue_to_retrieve_query): ', state)
-    
-    revise_request = []
-    for idx, sub_query in enumerate(state["sub_queries"]):
-        print(f"draft[{idx}]: {sub_query}")
-        
-        if sub_query:
-            revise_request.append(Send("retrieve_node", {
-                "sub_query": sub_query
-            }))
-    
-    print('revise_request: ', revise_request)
-    
-    return revise_request
-
 def buildRagWithTransformation():
     workflow = StateGraph(State)
 
     # Add nodes
     workflow.add_node("rewrite_node", rewrite_node)
     workflow.add_node("decompose_node", decompose_node)
-    workflow.add_node("retrieve_node", retrieve_node)
+    workflow.add_node("parallel_retriever", parallel_retriever)
+    workflow.add_node("parallel_grader", parallel_grader)
     workflow.add_node("generate_node", generate_node)
     
     # Set entry point
     workflow.set_entry_point("rewrite_node")
     
-    workflow.add_edge("rewrite_node", "decompose_node")
-    
-    workflow.add_conditional_edges(
-        "decompose_node", 
-        continue_to_retrieve_node, 
-        ["retrieve_node"]
-    )
-
     # Add edges
-    workflow.add_edge("retrieve_node", "generate_node")
+    workflow.add_edge("rewrite_node", "decompose_node")
+    workflow.add_edge("decompose_node", "parallel_retriever")
+    workflow.add_edge("parallel_retriever", "parallel_grader")
+    workflow.add_edge("parallel_grader", "generate_node")    
     workflow.add_edge("generate_node", END)
             
     return workflow.compile()
