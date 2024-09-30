@@ -790,7 +790,7 @@ def get_references_for_agent(docs):
     return reference
     
 def check_duplication(docs):
-    print('length of original docs:', len(docs))
+    length_original = len(docs)
     
     contentList = []
     updated_docs = []
@@ -802,7 +802,10 @@ def check_duplication(docs):
                 continue
             contentList.append(doc.page_content)
             updated_docs.append(doc)            
-    print('length of update_docs:', len(updated_docs))
+    length_updateed_docs = len(updated_docs)     
+    
+    if length_original == length_updateed_docs:
+        print('no duplication')
     
     return updated_docs
     
