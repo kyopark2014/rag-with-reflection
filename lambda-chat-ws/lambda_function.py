@@ -1182,7 +1182,8 @@ def buildRagWithReflection():
     workflow.add_edge("parallel_grader", "generate_node")
     
     workflow.add_edge("generate_node", "reflect_node")
-    workflow.add_edge("reflect_node", "parallel_grader_subqueries")    
+    workflow.add_edge("reflect_node", "parallel_retriever")    
+    workflow.add_edge("parallel_retriever", "parallel_grader_subqueries")    
     workflow.add_edge("parallel_grader_subqueries", "revise_node")
     
     workflow.add_conditional_edges(
