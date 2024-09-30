@@ -1001,15 +1001,15 @@ def parallel_retriever(state: State):
         process.start()
             
     for parent_conn in parent_connections:
-        doc = parent_conn.recv()
-        print('doc: ', doc)
-
-        if doc is not None:
+        docs = parent_conn.recv()
+        print('docs: ', docs)
+        
+        for doc in docs:
             relevant_doc.append(doc)
 
     for process in processes:
         process.join()    
-    #print('relevant_doc: ', relevant_doc)
+    print('relevant_doc: ', relevant_doc)
 
     return {
         "relevant_docs": relevant_doc
