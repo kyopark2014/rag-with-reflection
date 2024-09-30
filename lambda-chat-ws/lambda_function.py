@@ -1155,12 +1155,14 @@ def buildRagBasic():
 
     # Add nodes
     workflow.add_node("retrieve_node", retrieve_node)
+    workflow.add_node("parallel_grader", parallel_grader)
     workflow.add_node("generate_node", generate_node)
 
     # Set entry point
     workflow.set_entry_point("retrieve_node")
     
-    workflow.add_edge("retrieve_node", "generate_node")
+    workflow.add_edge("retrieve_node", "parallel_grader")
+    workflow.add_edge("parallel_grader", "generate_node")
             
     return workflow.compile()
     
