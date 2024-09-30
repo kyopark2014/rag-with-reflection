@@ -617,8 +617,6 @@ def print_doc(i, doc):
             
     print(f"{i}: {text}, metadata:{doc.metadata}")
     
-            
-
 class GradeDocuments(BaseModel):
     """Binary score for relevance check on retrieved documents."""
 
@@ -972,9 +970,13 @@ result = reflect_node({"query": query, "draft": draft})
 print('result: ', result)
 """
 
-def retriever(query: str):
+def retriever(conn, query):
     relevant_docs = retrieve_from_knowledge_base(query)    
+    print("---RETRIEVE: RELEVANT DOCUMENT---")
     print(f'--> query: {query}, length: {len(relevant_docs)}')
+    
+    conn.send(relevant_docs)    
+    conn.close()
     
     return relevant_docs
     
