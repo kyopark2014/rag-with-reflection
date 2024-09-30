@@ -819,6 +819,8 @@ def parallel_grader(state: State):
     query = state['query']
     relevant_docs = state['relevant_docs']
     
+    print('length of relevant_docs: ', len(relevant_docs))
+    
     global selected_chat    
     filtered_docs = []    
 
@@ -848,6 +850,8 @@ def parallel_grader(state: State):
     for process in processes:
         process.join()    
     #print('filtered_docs: ', filtered_docs)
+    
+    print('length of filtered_docs: ', len(filtered_docs))
 
     global reference_docs 
     reference_docs += filtered_docs    
