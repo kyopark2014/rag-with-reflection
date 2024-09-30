@@ -855,8 +855,7 @@ def parallel_grader(state: State):
 
     global reference_docs 
     reference_docs += filtered_docs    
-    # print('langth of reference_docs: ', len(reference_docs))    
-    # print('len(docments): ', len(filtered_docs))    
+    print('langth of reference_docs: ', len(reference_docs))    
     
     return {
         "filtered_docs": filtered_docs
