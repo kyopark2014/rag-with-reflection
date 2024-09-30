@@ -988,7 +988,7 @@ def parallel_retriever(state: State):
     parent_connections = []
     
     for i, query in enumerate(sub_queries):
-        #print(f"retrieve sub_queries[{i}]: {query}")        
+        print(f"retrieve sub_queries[{i}]: {query}")        
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
@@ -1000,6 +1000,7 @@ def parallel_retriever(state: State):
             
     for parent_conn in parent_connections:
         doc = parent_conn.recv()
+        print('doc: ', doc)
 
         if doc is not None:
             relevant_doc.append(doc)
