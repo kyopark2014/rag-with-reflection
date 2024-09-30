@@ -1012,7 +1012,7 @@ def parallel_retriever(state: State):
     #print('relevant_doc: ', relevant_doc)
 
     return {
-        "relevant_doc": relevant_doc
+        "relevant_docs": relevant_doc
     }
 
 def revise_node(state: State):   
