@@ -608,41 +608,7 @@ def grade_document_based_on_relevance(conn, question, doc, models, selected):
         conn.send(None)
     
     conn.close()
-                                    
-def grade_documents_using_parallel_processing(question, documents):
-    global selected_chat
-    
-    filtered_docs = []    
-
-    processes = []
-    parent_connections = []
-    
-    for i, doc in enumerate(documents):
-        #print(f"grading doc[{i}]: {doc.page_content}")        
-        parent_conn, child_conn = Pipe()
-        parent_connections.append(parent_conn)
-            
-        process = Process(target=grade_document_based_on_relevance, args=(child_conn, question, doc, multi_region_models, selected_chat))
-        processes.append(process)
-
-        selected_chat = selected_chat + 1
-        if selected_chat == len(multi_region_models):
-            selected_chat = 0
-    for process in processes:
-        process.start()
-            
-    for parent_conn in parent_connections:
-        relevant_doc = parent_conn.recv()
-
-        if relevant_doc is not None:
-            filtered_docs.append(relevant_doc)
-
-    for process in processes:
-        process.join()
-    
-    #print('filtered_docs: ', filtered_docs)
-    return filtered_docs
-    
+                                        
 def print_doc(i, doc):
     if len(doc.page_content)>=100:
         text = doc.page_content[:100]
@@ -651,44 +617,7 @@ def print_doc(i, doc):
             
     print(f"{i}: {text}, metadata:{doc.metadata}")
     
-def grade_documents(question, documents):
-    print("###### grade_documents ######")
-    
-    filtered_docs = []
-    if multi_region == 'enable':  # parallel processing
-        print("start grading...")
-        filtered_docs = grade_documents_using_parallel_processing(question, documents)
-
-    else:
-        # Score each doc    
-        chat = get_chat()
-        retrieval_grader = get_retrieval_grader(chat)
-        for i, doc in enumerate(documents):
-            if len(doc):
-                print_doc(i, doc)
             
-            score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
-            # print("score: ", score)
-            
-            grade = score.binary_score
-            # print("grade: ", grade)
-            # Document relevant
-            if grade.lower() == "yes":
-                print("---GRADE: DOCUMENT RELEVANT---")
-                filtered_docs.append(doc)
-            # Document not relevant
-            else:
-                print("---GRADE: DOCUMENT NOT RELEVANT---")
-                # We do not include the document in filtered_docs
-                # We set a flag to indicate that we want to run web search
-                continue
-            
-    global reference_docs 
-    reference_docs += filtered_docs    
-    # print('langth of reference_docs: ', len(reference_docs))
-    
-    # print('len(docments): ', len(filtered_docs))    
-    return filtered_docs
 
 class GradeDocuments(BaseModel):
     """Binary score for relevance check on retrieved documents."""
@@ -869,7 +798,8 @@ MAX_REVISIONS = 1
 class State(TypedDict):
     query: str
     draft: str
-    docs: List[str]
+    relevant_docs: List[str]
+    filtered_docs: List[str]
     reflection : List[str]
     sub_queries : List[str]
     revision_number: int
@@ -882,14 +812,53 @@ def retrieve_node(state: State):
     # print(f'q: {query}, RAG: {relevant_docs}')
     print(f'--> query: {query}, length: {len(relevant_docs)}')
     
-    filtered_docs = []
-    if len(relevant_docs):
-        filtered_docs = grade_documents(query, relevant_docs)
-    print('length of filtered_docs (retrieve_node): ', len(filtered_docs))
+    return {
+        "relevant_docs": relevant_docs
+    }
+    
+def parallel_grader(state: State):
+    print("###### parallel_grader ######")
+    query = state['query']
+    relevant_docs = state['relevant_docs']
+    
+    global selected_chat    
+    filtered_docs = []    
+
+    processes = []
+    parent_connections = []
+    
+    for i, doc in enumerate(relevant_docs):
+        #print(f"grading doc[{i}]: {doc.page_content}")        
+        parent_conn, child_conn = Pipe()
+        parent_connections.append(parent_conn)
+            
+        process = Process(target=grade_document_based_on_relevance, args=(child_conn, query, doc, multi_region_models, selected_chat))
+        processes.append(process)
+
+        selected_chat = selected_chat + 1
+        if selected_chat == len(multi_region_models):
+            selected_chat = 0
+    for process in processes:
+        process.start()
+            
+    for parent_conn in parent_connections:
+        relevant_doc = parent_conn.recv()
+
+        if relevant_doc is not None:
+            filtered_docs.append(relevant_doc)
+
+    for process in processes:
+        process.join()    
+    #print('filtered_docs: ', filtered_docs)
+
+    global reference_docs 
+    reference_docs += filtered_docs    
+    # print('langth of reference_docs: ', len(reference_docs))    
+    # print('len(docments): ', len(filtered_docs))    
     
     return {
-        "docs": filtered_docs
-    }
+        "filtered_docs": filtered_docs
+    }    
 
 class RetrieveState(TypedDict):
     sub_query: str
@@ -1232,9 +1201,12 @@ def buildRagWithReflection():
 
     # Add nodes
     workflow.add_node("retrieve_node", retrieve_node)
+    workflow.add_node("parallel_grader", parallel_grader)
     workflow.add_node("generate_node", generate_node)
-    workflow.add_node("reflect_node", reflect_node)
-    workflow.add_node("retrieve_sub_queries", retrieve_sub_queries)    
+    
+    workflow.add_node("reflect_node", reflect_node)    
+    workflow.add_node("parallel_retriever", parallel_retriever)    
+    workflow.add_node("parallel_grader_subqueries", parallel_grader)
     workflow.add_node("revise_node", revise_node)
 
     # Set entry point

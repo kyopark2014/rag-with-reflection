@@ -68,7 +68,7 @@ SystemQueue_Ext(continue_to_reflection, "continue_grade")
 
 Rel(Start, retrieve_node, "query")
 
-Rel(retrieve_node, continue_grade_basic, "relevant\ndoc1")
+Rel(retrieve_node, continue_grade_basic, "relevant\ndoc")
 
 Rel(continue_grade_basic, grade_node1, "relevant\ndoc1")
 Rel(continue_grade_basic, grade_node2, "relevant\ndoc2")
@@ -78,11 +78,11 @@ Rel(grade_node2, generate_node, "filtered\ndocs2")
 
 Rel(generate_node, reflect_node, "draft")
 
-Rel(reflect_node, continue_retriev, "draft")
+Rel(reflect_node, continue_retriev, "reflection,\nsub-queries")
 
-Rel(continue_retriev, retriever1, "reflection,\nsub-query1")
-Rel(continue_retriev, retriever2, "reflection,\nsub-query2")
-Rel(continue_retriev, retriever3, "nreflection,\nsub-query3")
+Rel(continue_retriev, retriever1, "sub-query1")
+Rel(continue_retriev, retriever2, "sub-query2")
+Rel(continue_retriev, retriever3, "sub-query3")
 
 Rel(retriever1, continue_grade, "relevant\ndocs 1")
 Rel(retriever2, continue_grade, "relevant\ndocs 2")

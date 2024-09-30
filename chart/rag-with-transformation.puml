@@ -36,21 +36,23 @@ Boundary(c1, "Transformation") {
     Container(decompose_node, "decompose_node")        
 }
 
-Boundary(c2, "") {
-    Container(retrieve_node1, "retrieve_node")
-    Container(retrieve_node2, "retrieve_node")
-    Container(retrieve_node3, "retrieve_node")
-    
+Boundary(c2, "parallel_retriever") {
+    SystemQueue_Ext(continue_retriever, "continue_retriever")
 
-    SystemQueue_Ext(duplication_checker, "duplication_checker")
+    Container(retrieve_node1, "retriever")
+    Container(retrieve_node2, "retriever")
+    Container(retrieve_node3, "retriever")
+}    
 
-    
-    Container(grade_node1, "grade_node")
-    Container(grade_node2, "grade_node")
-    Container(grade_node3, "grade_node")  
-    Container(grade_node4, "grade_node")  
-    
-     
+Boundary(c3, "parallel_grader") {
+    SystemQueue_Ext(continue_grader, "continue_grader")
+
+    Container(grade_node1, "grader")
+    Container(grade_node2, "grader")
+    Container(grade_node3, "grader")  
+    Container(grade_node4, "grader")  
+    Container(grade_node5, "grader")  
+    Container(grade_node6, "grader")  
 }
 
 Container(generate_node, "generate_node")    
@@ -59,17 +61,30 @@ Rel(Start, rewrite_node, "query")
 
 Rel(rewrite_node, decompose_node, "revised query")
 
-Rel(decompose_node, retrieve_node1, "sub-query1")
-Rel(decompose_node, retrieve_node2, "sub-query2")
-Rel(decompose_node, retrieve_node3, "sub-query3")
+Rel(decompose_node, continue_retriever, "sub-queries")
 
-Rel(retrieve_node1, grade_node1, "relevant\ndocs1")
-Rel(retrieve_node2, grade_node2, "relevant\ndocs2")
-Rel(retrieve_node3, grade_node3, "relevant\ndocs3")
+Rel(continue_retriever, retrieve_node1, "sub-query1")
+Rel(continue_retriever, retrieve_node2, "sub-query2")
+Rel(continue_retriever, retrieve_node3, "sub-query3")
 
-Rel(grade_node1, generate_node, "filtered\ndocs1")
-Rel(grade_node2, generate_node, "filtered\ndocs2")
-Rel(grade_node3, generate_node, "filtered\ndocs3")
+
+Rel(retrieve_node1, continue_grader, "relevant\ndocs1")
+Rel(retrieve_node2, continue_grader, "relevant\ndocs2")
+Rel(retrieve_node3, continue_grader, "relevant\ndocs3")
+
+Rel(continue_grader, grade_node1, "relevant\ndoc A")
+Rel(continue_grader, grade_node2, "relevant\ndoc B")
+Rel(continue_grader, grade_node3, "relevant\ndoc C")
+Rel(continue_grader, grade_node4, "relevant\ndoc D")
+Rel(continue_grader, grade_node5, "relevant\ndoc E")
+Rel(continue_grader, grade_node6, "relevant\ndoc F")
+
+Rel(grade_node1, generate_node, "filtered\ndocs A")
+Rel(grade_node2, generate_node, "filtered\ndocs B")
+Rel(grade_node3, generate_node, "filtered\ndocs C")
+Rel(grade_node4, generate_node, "filtered\ndocs D")
+Rel(grade_node5, generate_node, "filtered\ndocs E")
+Rel(grade_node6, generate_node, "filtered\ndocs F")
 
 Rel(generate_node, END, "result")
 
