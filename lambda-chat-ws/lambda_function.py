@@ -789,6 +789,23 @@ def get_references_for_agent(docs):
             reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
     return reference
     
+def check_duplication(docs):
+    print('length of original docs:', len(docs))
+    
+    contentList = []
+    updated_docs = []
+    print('length of relevant_docs:', len(docs))
+    for doc in docs:            
+        # print('excerpt: ', doc['metadata']['excerpt'])
+            if doc.page_content in contentList:
+                print('duplicated!')
+                continue
+            contentList.append(doc.page_content)
+            updated_docs.append(doc)            
+    print('length of update_docs:', len(updated_docs))
+    
+    return updated_docs
+    
 ####################### LangGraph #######################
 # RAG functions
 #########################################################
@@ -856,6 +873,9 @@ def parallel_grader(state: State):
     global reference_docs 
     reference_docs += filtered_docs    
     print('langth of reference_docs: ', len(reference_docs))    
+    
+    # duplication checker
+    reference_docs = check_duplication(reference_docs)
     
     return {
         "filtered_docs": filtered_docs
@@ -1015,27 +1035,10 @@ def parallel_retriever(state: State):
     print('relevant_docs: ', relevant_docs)
     
     # duplication checker
-    contentList = []
-    update_docs = []
-    top_k = 8
-    
-    print('length of relevant_docs:', len(relevant_docs))
-    for doc in relevant_docs:            
-        # print('excerpt: ', doc['metadata']['excerpt'])
-            if doc.page_content in contentList:
-                print('duplicated!')
-                continue
-            contentList.append(doc.page_content)
-            update_docs.append(doc)
-            
-            if len(update_docs)>=top_k:
-                break        
-    
-    print('length of update_docs:', len(update_docs))
-    print('update_docs:', update_docs)
+    relevant_docs = check_duplication(relevant_docs)
 
     return {
-        "relevant_docs": update_docs
+        "relevant_docs": relevant_docs
     }
 
 def revise_node(state: State):   
