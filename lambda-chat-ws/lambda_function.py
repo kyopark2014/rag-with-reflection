@@ -817,19 +817,6 @@ def traslation(chat, text, input_language, output_language):
 
     return msg[msg.find('<result>')+8:len(msg)-9] # remove <result> tag
 
-def retrieve(query):
-    relevant_docs = retrieve_from_knowledge_base(query)
-    
-    # print(f'q: {query}, RAG: {relevant_docs}')
-    print(f'--> query: {query}, length: {len(relevant_docs)}')
-    
-    filtered_docs = []
-    if len(relevant_docs):
-        filtered_docs = grade_documents(query, relevant_docs)
-    print('length of filtered_docs (retrieve_node): ', len(filtered_docs))
-    
-    return filtered_docs
-
 def get_references_for_agent(docs):
     reference = "\n\nFrom\n"
     for i, doc in enumerate(docs):
@@ -1049,23 +1036,38 @@ result = reflect_node({"query": query, "draft": draft})
 print('result: ', result)
 """
 
+def retrieve_sub_queries(state: State):
+    print("###### retrieve_sub_queries ######")
+    sub_queries = state['sub_queries']
+    print('sub_queries: ', sub_queries)
+
+    docs = []
+    for i, sub_query in enumerate(sub_queries):
+        relevant_docs = retrieve_from_knowledge_base(sub_query)
+    
+        # print(f'q: {query}, RAG: {relevant_docs}')
+        print(f'--> sub_queries[{i}]: {sub_query}, length: {len(relevant_docs)}')
+        
+        filtered_docs = []
+        if len(relevant_docs):
+            filtered_docs = grade_documents(sub_query, relevant_docs)
+        print('length of filtered_docs (retrieve_node): ', len(filtered_docs))
+
+        print('-----> filtered_docs: ', filtered_docs)
+        docs += filtered_docs
+
+    return {
+        "docs": docs
+    }
+
 def revise_node(state: State):   
     print("###### revise ######")
         
     draft = state['draft']
     reflection = state['reflection']
-    sub_queries = state['sub_queries']
     print('draft: ', draft)
     print('reflection: ', reflection)
-    print('sub_queries: ', sub_queries)
     
-    docs = []
-    for i, sub_query in enumerate(sub_queries):
-        doc = retrieve(sub_query)
-        
-        print('-----> doc: ', doc)
-        docs += doc
-        
     if isKorean(draft):
         revise_template = (
             "당신은 장문 작성에 능숙한 유능한 글쓰기 도우미입니다."                
@@ -1133,9 +1135,6 @@ def revise_node(state: State):
     revised_draft = output[output.find('<result>')+8:len(output)-9]
     # print('revised_draft: ', revised_draft) 
             
-    if revised_draft.find('#')!=-1 and revised_draft.find('#')!=0:
-        revised_draft = revised_draft[revised_draft.find('#'):]
-
     print('--> draft: ', draft)
     print('--> reflection: ', reflection)
     print('--> revised_draft: ', revised_draft)
@@ -1235,6 +1234,7 @@ def buildRagWithReflection():
     workflow.add_node("retrieve_node", retrieve_node)
     workflow.add_node("generate_node", generate_node)
     workflow.add_node("reflect_node", reflect_node)
+    workflow.add_node("retrieve_sub_queries", retrieve_sub_queries)    
     workflow.add_node("revise_node", revise_node)
 
     # Set entry point
@@ -1242,7 +1242,8 @@ def buildRagWithReflection():
     
     workflow.add_edge("retrieve_node", "generate_node")
     workflow.add_edge("generate_node", "reflect_node")
-    workflow.add_edge("reflect_node", "revise_node")
+    workflow.add_edge("reflect_node", "retrieve_sub_queries")    
+    workflow.add_edge("retrieve_sub_queries", "revise_node")
     
     workflow.add_conditional_edges(
         "revise_node", 

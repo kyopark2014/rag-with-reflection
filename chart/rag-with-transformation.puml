@@ -33,21 +33,43 @@ LAYOUT_WITH_LEGEND()
 
 Boundary(c1, "Transformation") {
     Container(rewrite_node, "rewrite_node")  
-    Container(decompose_node, "decompose_node")    
-
-    Container(retrieve_node, "retrieve_node")
+    Container(decompose_node, "decompose_node")        
 }
 
+Boundary(c2, "") {
+    Container(retrieve_node1, "retrieve_node")
+    Container(retrieve_node2, "retrieve_node")
+    Container(retrieve_node3, "retrieve_node")
+    
 
-Container(generate_node, "generate_node")
+    SystemQueue_Ext(duplication_checker, "duplication_checker")
+
+    
+    Container(grade_node1, "grade_node")
+    Container(grade_node2, "grade_node")
+    Container(grade_node3, "grade_node")  
+    Container(grade_node4, "grade_node")  
+    
+     
+}
+
+Container(generate_node, "generate_node")    
 
 Rel(Start, rewrite_node, "query")
 
 Rel(rewrite_node, decompose_node, "revised query")
 
-Rel(decompose_node, retrieve_node, "sub-queries")
+Rel(decompose_node, retrieve_node1, "sub-query1")
+Rel(decompose_node, retrieve_node2, "sub-query2")
+Rel(decompose_node, retrieve_node3, "sub-query3")
 
-Rel(retrieve_node, generate_node, "docs")
+Rel(retrieve_node1, grade_node1, "relevant\ndocs1")
+Rel(retrieve_node2, grade_node2, "relevant\ndocs2")
+Rel(retrieve_node3, grade_node3, "relevant\ndocs3")
+
+Rel(grade_node1, generate_node, "filtered\ndocs1")
+Rel(grade_node2, generate_node, "filtered\ndocs2")
+Rel(grade_node3, generate_node, "filtered\ndocs3")
 
 Rel(generate_node, END, "result")
 

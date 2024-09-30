@@ -32,16 +32,28 @@ LAYOUT_WITH_LEGEND()
 
 Container(retrieve_node, "retrieve_node")
 
-Container(grade_node, "grade_node")
+Container(generate_node, "generate_node")  
 
-Container(generate_node, "generate_node")
+Boundary(c2, "Reflection") {
+    Container(reflect_node, "reflect_node")
+
+    Container(revise_node, "revise_node")
+}
+
+SystemQueue_Ext(continue_to_reflection, "continue_to_reflection\n(max_revision?)")
 
 Rel(Start, retrieve_node, "query")
 
-Rel(retrieve_node, grade_node, "query\nrelevant_docs")
+Rel(retrieve_node, generate_node, "docs")
 
-Rel(grade_node, generate_node, "query\nfiltered_docs")
+Rel(generate_node, reflect_node, "draft")
 
-Rel(generate_node, END, "result")
+Rel(reflect_node, revise_node, "reflection,\nsub-queries")
+
+Rel(revise_node, continue_to_reflection, "revision")
+
+Rel(continue_to_reflection, reflect_node, "")
+
+Rel(continue_to_reflection, END, "result")
 
 @enduml

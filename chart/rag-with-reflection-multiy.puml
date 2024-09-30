@@ -1,0 +1,111 @@
+@startuml Self RAG
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+!$BLACK = "#black"
+!$COLOR_A_6 = "#d4de5e"
+!$COLOR_A_5 = "#7f3b08"
+!$COLOR_A_4 = "#b35806"
+!$COLOR_A_3 = "#e08214"
+!$COLOR_A_2 = "#fdb863"
+!$COLOR_A_1 = "#fee0b6"
+!$COLOR_NEUTRAL = "#f7f7f7"
+!$COLOR_B_1 = "#d8daeb"
+!$COLOR_B_2 = "#b2abd2"
+!$COLOR_B_3 = "#8073ac"
+!$COLOR_B_4 = "#542788"
+!$COLOR_B_5 = "#2d004b"
+!$COLOR_REL_LINE = "#8073ac"
+!$COLOR_REL_TEXT = "#8073ac"
+
+UpdateElementStyle("container", $bgColor=$COLOR_A_6, $fontColor=$BLACK, $borderColor=$COLOR_A_1, $shadowing="false", $legendText="Internal user")
+UpdateElementStyle("system", $bgColor=$COLOR_B_4, $fontColor=$COLOR_NEUTRAL, $borderColor=$COLOR_B_2, $legendText="External system")
+UpdateRelStyle($lineColor=$COLOR_REL_LINE, $textColor=$COLOR_REL_TEXT)
+
+LAYOUT_WITH_LEGEND()
+
+'System(start, "Start")
+'System(END, "END")
+
+Boundary(c1, "Basic RAG") {
+    Container(retrieve_node, "retrieve_node")
+
+    Boundary(c1-1, "parallel_grader") {
+        SystemQueue_Ext(continue_grade_basic, "continue_grade")
+
+        Container(grade_node1, "grader")
+        Container(grade_node2, "grader")
+    }
+    Container(generate_node, "generate_node")  
+}
+
+Boundary(c2, "Reflection") {
+    Container(reflect_node, "reflect_node")
+        
+    Boundary(c2-1, "parallel_retreiver") {
+        SystemQueue_Ext(continue_retriev, "continue_retrieve")
+        Container(retriever1, "retriever")  
+        Container(retriever2, "retriever")  
+        Container(retriever3, "retriever")  
+    }
+
+    Boundary(c3, "parallel_grader") {
+        SystemQueue_Ext(continue_grade, "continue_grade")
+        Container(grader1, "grader")  
+        Container(grader2, "grader")  
+        Container(grader3, "grader")  
+        Container(grader4, "grader")  
+        Container(grader5, "grader")          
+        Container(grader6, "grader")          
+    }
+}
+
+Container(revise_node, "revise_node")
+SystemQueue_Ext(continue_to_reflection, "continue_grade")
+
+Rel(Start, retrieve_node, "query")
+
+Rel(retrieve_node, continue_grade_basic, "relevant\ndoc1")
+
+Rel(continue_grade_basic, grade_node1, "relevant\ndoc1")
+Rel(continue_grade_basic, grade_node2, "relevant\ndoc2")
+
+Rel(grade_node1, generate_node, "filtered\ndocs1")
+Rel(grade_node2, generate_node, "filtered\ndocs2")
+
+Rel(generate_node, reflect_node, "draft")
+
+Rel(reflect_node, continue_retriev, "draft")
+
+Rel(continue_retriev, retriever1, "reflection,\nsub-query1")
+Rel(continue_retriev, retriever2, "reflection,\nsub-query2")
+Rel(continue_retriev, retriever3, "nreflection,\nsub-query3")
+
+Rel(retriever1, continue_grade, "relevant\ndocs 1")
+Rel(retriever2, continue_grade, "relevant\ndocs 2")
+Rel(retriever3, continue_grade, "relevant\ndocs 3")
+
+Rel(continue_grade, grader1, "relevant\ndocs A")
+Rel(continue_grade, grader2, "relevant\ndocs B")
+Rel(continue_grade, grader3, "relevant\ndocs C")
+Rel(continue_grade, grader4, "relevant\ndocs D")
+Rel(continue_grade, grader5, "relevant\ndocs E")
+Rel(continue_grade, grader6, "relevant\ndocs F")
+
+Rel(grader1, revise_node, "filtered\ndocs A")
+Rel(grader2, revise_node, "filtered\ndocs B")
+Rel(grader3, revise_node, "filtered\ndocs C")
+Rel(grader4, revise_node, "filtered\ndocs D")
+Rel(grader5, revise_node, "filtered\ndocs E")
+Rel(grader6, revise_node, "filtered\ndocs F")
+
+Rel(revise_node, continue_to_reflection, "revision")
+
+Rel(continue_to_reflection, reflect_node, "")
+
+Rel(continue_to_reflection, END, "result")
+
+@enduml
