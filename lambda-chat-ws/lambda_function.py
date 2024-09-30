@@ -863,38 +863,6 @@ def parallel_grader(state: State):
 class RetrieveState(TypedDict):
     sub_query: str
 
-def retrieve_query(state: RetrieveState):    
-    print("###### retrieve_query ######")
-    print('state (retrieve_query): ', state)
-    
-    sub_query = state['sub_query']
-    relevant_docs = retrieve_from_knowledge_base(sub_query)
-    
-    # print(f'sub_query: {sub_query}, RAG: {relevant_docs}')
-    print(f'--> sub_query: {sub_query}, length: {len(relevant_docs)}')
-    for i, doc in enumerate(relevant_docs):
-        if len(doc.page_content)>=100:
-            print(f"{i}, doc: {doc.page_content[:100]}")
-        else:
-            print(f"{i}, doc: {doc.page_content}")
-    
-    filtered_docs = []
-    if len(relevant_docs):
-        filtered_docs = grade_documents(sub_query, relevant_docs)
-    print('length of filtered_docs (retrieve_query): ', len(filtered_docs))
-
-    # web search
-    #for q in sub_queries:
-    #    docs = tavily_search(q, 4)
-    #    print(f'q: {q}, WEB: {docs}')
-        
-    #    if len(docs):
-    #        filtered_docs += grade_documents(q, docs)
-    
-    return {
-        "docs": filtered_docs
-    }
-
 def generate_node(state: State):
     print("###### generate ######")
     query = state["query"]
@@ -1005,28 +973,44 @@ result = reflect_node({"query": query, "draft": draft})
 print('result: ', result)
 """
 
-def retrieve_sub_queries(state: State):
-    print("###### retrieve_sub_queries ######")
+def retriever(query: str):
+    relevant_docs = retrieve_from_knowledge_base(query)    
+    print(f'--> query: {query}, length: {len(relevant_docs)}')
+    
+    return relevant_docs
+    
+def parallel_retriever(state: State):
+    print("###### parallel_retriever ######")
     sub_queries = state['sub_queries']
     print('sub_queries: ', sub_queries)
-
-    docs = []
-    for i, sub_query in enumerate(sub_queries):
-        relevant_docs = retrieve_from_knowledge_base(sub_query)
     
-        # print(f'q: {query}, RAG: {relevant_docs}')
-        print(f'--> sub_queries[{i}]: {sub_query}, length: {len(relevant_docs)}')
-        
-        filtered_docs = []
-        if len(relevant_docs):
-            filtered_docs = grade_documents(sub_query, relevant_docs)
-        print('length of filtered_docs (retrieve_node): ', len(filtered_docs))
+    relevant_doc = []
+    processes = []
+    parent_connections = []
+    
+    for i, query in enumerate(sub_queries):
+        #print(f"retrieve sub_queries[{i}]: {query}")        
+        parent_conn, child_conn = Pipe()
+        parent_connections.append(parent_conn)
+            
+        process = Process(target=retriever, args=(child_conn, query))
+        processes.append(process)
 
-        print('-----> filtered_docs: ', filtered_docs)
-        docs += filtered_docs
+    for process in processes:
+        process.start()
+            
+    for parent_conn in parent_connections:
+        doc = parent_conn.recv()
+
+        if doc is not None:
+            relevant_doc.append(doc)
+
+    for process in processes:
+        process.join()    
+    #print('relevant_doc: ', relevant_doc)
 
     return {
-        "docs": docs
+        "relevant_doc": relevant_doc
     }
 
 def revise_node(state: State):   
@@ -1187,8 +1171,8 @@ def continue_to_retrieve_query(state: State):
     
     return revise_request
 
-def should_to_reflection(state: State, config):
-    print("###### should_to_reflection ######")
+def continue_reflection(state: State, config):
+    print("###### continue_reflection ######")
     max_revisions = config.get("configurable", {}).get("max_revisions", MAX_REVISIONS)
     print("max_revisions: ", max_revisions)
             
@@ -1212,14 +1196,16 @@ def buildRagWithReflection():
     # Set entry point
     workflow.set_entry_point("retrieve_node")
     
-    workflow.add_edge("retrieve_node", "generate_node")
+    workflow.add_edge("retrieve_node", "parallel_grader")
+    workflow.add_edge("parallel_grader", "generate_node")
+    
     workflow.add_edge("generate_node", "reflect_node")
-    workflow.add_edge("reflect_node", "retrieve_sub_queries")    
-    workflow.add_edge("retrieve_sub_queries", "revise_node")
+    workflow.add_edge("reflect_node", "parallel_grader_subqueries")    
+    workflow.add_edge("parallel_grader_subqueries", "revise_node")
     
     workflow.add_conditional_edges(
         "revise_node", 
-        should_to_reflection, 
+        continue_reflection, 
         {
             "end": END, 
             "continue": "reflect_node"}
