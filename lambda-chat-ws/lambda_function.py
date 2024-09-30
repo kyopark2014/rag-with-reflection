@@ -1065,7 +1065,7 @@ def revise_node(state: State):
         ('human', revise_template)
     ])
     
-    filtered_docs = state['docs']
+    filtered_docs = state['filtered_docs']
     print('filtered_docs: ', filtered_docs)
               
     content = []   
