@@ -482,7 +482,7 @@ def rewrite_node(state: State):
 
 아래와 같이 메뉴에서 "RAG (Basic)"을 선택합니다.
 
-![image](https://github.com/user-attachments/assets/0bf0dfaf-b73e-441c-b6ae-123300b427da)
+<img src="https://github.com/user-attachments/assets/0bf0dfaf-b73e-441c-b6ae-123300b427da" width="400">
 
 채팅창에 "Advanced RAG에 대해 설명해주세요"라고 입력하고 결과를 확인합니다. 이때, RAG에 포함된 문서에 따라 결과는 달라집니다. 여기에서는 RAG와 관련된 각종 PPT를 넣었을때의 결과입니다. 파일은 화면 하단의 파일 아이콘을 이용해 넣거나, [Amazon S3 Console](https://ap-northeast-2.console.aws.amazon.com/s3/home?region=us-west-2#)에서 직접 push해서 넣을 수 있습니다. 
 
