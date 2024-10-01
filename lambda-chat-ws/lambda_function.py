@@ -1217,12 +1217,6 @@ def decompose_node(state: State):
         "sub_queries": [query] + sub_queries
     }    
 
-revised_query = "RAG(Retrieval-Augmented Generation) 모델은 정보 검색과 자연어 생성을 결합한 최신 기술입니다. RAG 모델의 구조와 작동 원리, 장단점, 주요 응용 분야와 사례에 대해 자세히 설명해주시기 바랍니다. 또한 RAG 모델의 발전 방향과 향후 전망에 대해서도 설명해주시면 감사하겠습니다."
-
-output = decompose_node({"query": revised_query})
-print('output: ', output)
-
-
 ####################### LangGraph #######################
 # RAG (Basic)
 #########################################################
