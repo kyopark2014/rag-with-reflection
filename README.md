@@ -495,7 +495,7 @@ def rewrite_node(state: State):
 
 아래와 같이 메뉴에서 "RAG (Basic)"을 선택합니다.
 
-<img src="https://github.com/user-attachments/assets/0bf0dfaf-b73e-441c-b6ae-123300b427da" width="400">
+<img src="https://github.com/user-attachments/assets/6796bc3b-4b5c-4585-9a26-0ea7c6eaf566" width="400">
 
 채팅창에 "Advanced RAG에 대해 설명해주세요"라고 입력하고 결과를 확인합니다. 이때, RAG에 포함된 문서에 따라 결과는 달라집니다. 여기에서는 RAG와 관련된 각종 PPT를 넣었을때의 결과입니다. 파일은 화면 하단의 파일 아이콘을 이용해 넣거나, [Amazon S3 Console](https://ap-northeast-2.console.aws.amazon.com/s3/home?region=us-west-2#)에서 직접 push해서 넣을 수 있습니다. 
 
@@ -534,6 +534,7 @@ RAG 모델의 구조와 작동 원리, 장단점, 주요 응용 분야와 사례
 
 ## 결론
 
+LangGraph를 이용하여 기본 RAG를 구현하고, Reflection과 Query Transformation을 이용하여 RAG의 성능을 향상시키는 방법을 비교하였습니다. 이를 통해 한국어/영어 문서들을 동시에 검색하고, 생성된 답변을 강화할 수 있습니다. 또한 다수의 query로 인해 같은 문서가 검색되었때에 대한 중복처리를 수행하고, 병렬처리를 통하여 수행시간을 개선하였습니다. 여기에서는 prompt을 이용한 relevant document 검증하였고, 서버리스 아키텍처를 이용하여 유지보수 및 변화하는 트래픽에 대해 유연하게 운영할 수 있도록 하였습니다. 또한, AWS CDK를 이용하여 편리하게 AWS Cloud에 배포할 수 있습니다.
 
 ## 리소스 정리하기 
 
