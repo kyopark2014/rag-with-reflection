@@ -948,9 +948,6 @@ def reflect_node(state: State):
             structured_llm = chat.with_structured_output(Research, include_raw=True)
             qa = f"Question: {query}\n\nAnswer: {draft}"
         
-        #structured_llm = chat.with_structured_output(Research, include_raw=True)
-        #qa = f"Question: {query}\n\nAnswer: {draft}"
-            
         info = structured_llm.invoke(qa)
         print(f'attempt: {attempt}, info: {info}')
                 
@@ -962,7 +959,6 @@ def reflect_node(state: State):
                 
             print('reflection: ', parsed_info.reflection)            
         
-            """
             if isKorean(draft):
                 translated_search = []
                 for q in sub_queries:
@@ -975,7 +971,7 @@ def reflect_node(state: State):
                         
                 print('translated_search: ', translated_search)
                 sub_queries += translated_search
-            """
+
             break
     print('sub_queries: ', sub_queries)
         
@@ -984,6 +980,7 @@ def reflect_node(state: State):
         "sub_queries": sub_queries,
     }
 
+"""
 query = "advanced RAG에 대해 설명해줘"
 draft = "네, 서연이가 Advanced RAG에 대해 설명드리겠습니다. \
 Advanced RAG는 일반적인 RAG(Retrieval Augmented Generation) 모델의 성능을 향상시키기 위한 고급 기술들을 통합한 모델입니다. 주요 기술로는 다음과 같은 것들이 있습니다. \
@@ -994,6 +991,7 @@ Advanced RAG는 일반적인 RAG(Retrieval Augmented Generation) 모델의 성�
 
 result = reflect_node({"query": query, "draft": draft})
 print('result: ', result)
+"""
 
 def retriever(conn, query):
     relevant_docs = retrieve_from_knowledge_base(query)    
