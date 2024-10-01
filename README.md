@@ -207,7 +207,7 @@ def buildRagWithReflection():
     return workflow.compile()
 ```
 
-reflection은 초안(draft)로 부터 아래와 같이 [structured output](https://github.com/kyopark2014/langgraph-agent/blob/main/structured-output.md)을 이용하여 추출합니다. 추출된 결과에는 reflection과 관련하여 missing, advisable, superfluous을 얻어서 문자의 개선에 도움을 줄 수 있으며, sub_queries를 이용해 1-3개의 새로운 질문을 생성합니다.
+Reflection은 초안(draft)로 부터 아래와 같이 [structured output](https://github.com/kyopark2014/langgraph-agent/blob/main/structured-output.md)을 이용하여 추출합니다. 추출된 결과에는 reflection과 관련하여 missing, advisable, superfluous을 얻어서 문자의 개선에 도움을 줄 수 있으며, sub_queries를 이용해 1-3개의 새로운 질문을 생성합니다. RAG에서는 embedding을 통해 한국어로 영어로된 문서를 찾을 수 있으나 유사한 한글 문서가 많은 경우에는 유용한 영어 문서를 참조하지 못할 수 있습니다. 따라서 여기에서는 생성된 sub_query가 한국어일 경우에는 번역하여 영어로 된 sub_query를 추가합니다. 또한 reflection으로 답변에 부족한 부분이나, 추가되어야할 내용, 길이/스타일에 대한 정보를 추출하여 답변을 향상시킬 수 있습니다.
 
 ```python
 class Reflection(BaseModel):
@@ -225,7 +225,6 @@ class ReflectionKor(BaseModel):
     missing: str = Field(description="답변에 있어야하는데 빠진 내용이나 단점")
     advisable: str = Field(description="더 좋은 답변이 되기 위해 추가하여야 할 내용")
     superfluous: str = Field(description="답변의 길이나 스타일에 대한 비평")
-
 class ResearchKor(BaseModel):
     """답변을 개선하기 위한 검색 쿼리를 제공합니다."""
 
@@ -414,7 +413,7 @@ def continue_reflection(state: State, config):
 
 ### Query Transformation
 
-RAG에 질문하기 전에 입력된 query를 변환하여 성능을 향상시키기 위해서는 아래와 같이 rewrite와 decompse과정이 필요합니다. rewrite_node는 RAG에서 좀더 좋은 결과를 얻도록 query의 내용을 자세하게 풀어 적습니다. 이후 decompse_node에서는 RAG에서 조회할때 사용할 sub-quries들을 생성합니다. 여기에서는 [query_transformations.ipynb](https://github.com/NirDiamant/RAG_Techniques/blob/main/all_rag_techniques/query_transformations.ipynb)을 참조하여 query transformation을 위한 prompt를 생성합니다.
+RAG에 질문하기 전에 입력된 query를 변환하여 성능을 향상시키기 위해서는 아래와 같이 rewrite와 decompse 과정이 필요합니다. rewrite_node는 RAG에서 좀더 좋은 결과를 얻도록 query의 내용을 자세하게 풀어 적습니다. 이후 decompse_node에서는 RAG에서 조회할때 사용할 sub-quries들을 생성합니다. 여기에서는 [query_transformations.ipynb](https://github.com/NirDiamant/RAG_Techniques/blob/main/all_rag_techniques/query_transformations.ipynb)을 참조하여 query transformation을 위한 prompt를 생성합니다.
 
 
 <img src="./chart/rag-with-transformation.png" width="400">
@@ -477,6 +476,18 @@ def rewrite_node(state: State):
     }
 ```
 
+## 직접 실습 해보기
+
+### 사전 준비 사항
+
+이 솔루션을 사용하기 위해서는 사전에 아래와 같은 준비가 되어야 합니다.
+
+- [AWS Account 생성](https://repost.aws/ko/knowledge-center/create-and-activate-aws-account)에 따라 계정을 준비합니다.
+
+### CDK를 이용한 인프라 설치
+
+본 실습에서는 us-west-2 리전을 사용합니다. [인프라 설치](./deployment.md)에 따라 CDK로 인프라 설치를 진행합니다. 
+
 
 ## 실행결과
 
@@ -490,13 +501,13 @@ def rewrite_node(state: State):
 
 ![image](https://github.com/user-attachments/assets/db55d84c-ce7b-4362-a6cf-d0f312644df0)
 
-### Reformation 
+### Transformation 
 
-아래는 reformation 적용시에 "Advanced RAG에 대해 설명해주세요"에 대한 답변입니다. 답변의 길이나 설명은 좋으나 Advanced RAG가 아닌 일반 RAG에 대해 설명하고 있습니다.
+메뉴에서 "RAG with Transformation"을 선택합니다. 아래는 "Advanced RAG에 대해 설명해주세요"에 대한 답변입니다. 답변의 길이나 설명은 좋으나 Advanced RAG가 아닌 일반 RAG에 대해 설명하고 있습니다.
 
 ![noname](https://github.com/user-attachments/assets/2ea36d7e-d23b-44e3-902c-ff1deb6fd748)
 
-로그를 확인해보면 rewrite후에 아래와 같이 새로운 질문(revised_query)가 생성되었으나, advanced 단어가 제외되어 있습니다.
+로그를 확인해보면 rewrite후에 아래와 같이 새로운 질문(revised_query)가 생성되었으며, 이때에 advanced 단어가 제외되어 있습니다. 여기서 사용한 "Advanced RAG"는 문서에서 고유명사처럼 사용되고 있으나 rewrite하는 과정에서 제외된것으로 보여집니다.
 
 ```text
 RAG(Retrieval-Augmented Generation) 모델은 정보 검색과 자연어 생성을 결합한 최신 기술입니다.
@@ -513,9 +524,26 @@ RAG 모델의 구조와 작동 원리, 장단점, 주요 응용 분야와 사례
 4. RAG 모델의 발전 방향과 향후 전망은 어떠합니까?
 ```
 
+대부분의 경우에 transformation은 질문을 명확히하고 다양한 관점에서 RAG를 검색할 수 있도록 도와주어서 성능에 도움이 됩니다. 하지만, 일부 엣지 케이스에서는 원래 의도했던 내용과 다른 답변을 얻을 수 있습니다.
+
 ### Reflection 
 
-아래는 "Advanced RAG에 대해 설명해주세요"에 대한 답변입니다. 기본 RAG에서 조회하였을 때보다 각 기능의 세부내용에 대해 더 많은 정보를 제공하고 있습니다. 
+메뉴에서 "RAG with Reflection"을 선택한 후에 아래와 같이 "Advanced RAG에 대해 설명해주세요"라고 질문합니다. 결과를 보면, reflection 동작을 통해 답변과 관련된 다양한 query가 수행되었으므로, 기본 RAG 보다 더 상세한 내용의 답변을 얻을 수 있습니다.
 
 ![noname](https://github.com/user-attachments/assets/0c0f7b04-f086-449a-949a-cc725aef7480)
+
+## 결론
+
+
+## 리소스 정리하기 
+
+더이상 인프라를 사용하지 않는 경우에 아래처럼 모든 리소스를 삭제할 수 있습니다. 
+
+1) [API Gateway Console](https://us-east-1.console.aws.amazon.com/apigateway/main/apis?region=us-east-1)로 접속하여 "rest-api-for-langgraph-agent", "ws-api-for-langgraph-agent"을 삭제합니다.
+
+2) [Cloud9 Console](https://us-east-1.console.aws.amazon.com/cloud9control/home?region=us-east-1#/)에 접속하여 아래의 명령어로 전체 삭제를 합니다.
+
+```text
+cd ~/environment/langgraph-agent/cdk-langgraph-agent/ && cdk destroy --all
+```
 
