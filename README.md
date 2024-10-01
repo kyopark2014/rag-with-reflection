@@ -15,13 +15,14 @@ RAG의 결과가 충분한 context를 포함하고 있지 않은 경우에 [Quer
 ### Basic RAG 
 
 <img src="./chart/rag-basic.png" width="150">
-   
-## RAG with Reflection
+ 
+### RAG with Reflection
 
 
 
 ### Query Transformation
 
+[query_transformations.ipynb](https://github.com/NirDiamant/RAG_Techniques/blob/main/all_rag_techniques/query_transformations.ipynb)을 참조하여 query transformation을 위한 prompt를 생성합니다.
 
 
 ## 실행결과
