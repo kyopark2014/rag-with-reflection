@@ -1640,14 +1640,7 @@ def getResponse(connectionId, jsonBody):
     if "multi_region" in jsonBody:
         multi_region = jsonBody['multi_region']
     print('multi_region: ', multi_region)
-    
-    global rag_state    
-    if "rag" in jsonBody:
-        rag_state = jsonBody['rag']
-    else:
-        rag_state = 'disable'
-    print('rag_state: ', rag_state)
-        
+            
     print('initiate....')
     
     global reference_docs

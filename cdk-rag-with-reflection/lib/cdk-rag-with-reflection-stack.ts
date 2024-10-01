@@ -67,7 +67,7 @@ const titan_embedding_v2 = [
   }
 ];
 
-const LLM_for_chat = claude3_haiku;  
+const LLM_for_chat = claude3_sonnet;  // claude3_5_sonnet
 const LLM_for_multimodal = claude3_sonnet;
 const LLM_embedding = titan_embedding_v2;
 

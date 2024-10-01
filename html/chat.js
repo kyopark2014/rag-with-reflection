@@ -217,16 +217,6 @@ else {
 }
 console.log('multi_region: ', multi_region);
 
-// multi region
-let ragMode = localStorage.getItem('ragMode'); // set userID if exists 
-if(ragMode=="" || ragMode==null) {
-    rag_mode = 'disable';    
-}
-else {
-    rag_mode = ragMode;
-}
-console.log('rag_mode: ', rag_mode);
-
 for (i=0;i<maxMsgItems;i++) {
     msglist.push(document.getElementById('msgLog'+i));
 
@@ -312,8 +302,7 @@ function onSend(e) {
                 "type": "text",
                 "body": message.value,
                 "convType": conversationType,
-                "multi_region": multi_mode,
-                "rag": rag_mode
+                "multi_region": multi_mode
             })
         }
         else {
