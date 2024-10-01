@@ -528,7 +528,7 @@ RAG 모델의 구조와 작동 원리, 장단점, 주요 응용 분야와 사례
 
 ### Reflection 
 
-메뉴에서 "RAG with Reflection"을 선택한 후에 아래와 같이 "Advanced RAG에 대해 설명해주세요"라고 질문합니다. 결과를 보면, reflection 동작을 통해 답변과 관련된 다양한 query가 수행되었으므로, 기본 RAG 보다 더 상세한 내용의 답변을 얻을 수 있습니다.
+메뉴에서 "RAG with Reflection"을 선택한 후에 아래와 같이 "Advanced RAG에 대해 설명해주세요"라고 질문합니다. 결과를 보면, reflection 동작을 통해 답변과 관련된 다양한 query가 수행되었으므로, 기본 RAG 보다 더 상세한 내용의 답변을 얻을 수 있습니다.
 
 ![noname](https://github.com/user-attachments/assets/0c0f7b04-f086-449a-949a-cc725aef7480)
 
