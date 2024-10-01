@@ -1164,6 +1164,12 @@ class Decompose(BaseModel):
             description="The sub-queries that are well optimized for retrieval."
         )
 
+class DecomposeKor(BaseModel):
+        """검색을 위해 잘 최적화된 하위 쿼리"""
+
+        sub_queries: list[str] = Field(
+            description="검색에 최적화된 하위 쿼리"
+        )
 """
 class Research(BaseModel):
 
@@ -1177,21 +1183,36 @@ def decompose_node(state: State):
     print("###### decompose ######")
     query = state['query']
     
-    subquery_decomposition_template = (
-        "You are an AI assistant tasked with breaking down complex queries into simpler sub-queries for a RAG system."
-        "Given the original query, decompose it into 2-4 simpler sub-queries."
-        # "When answered together, would provide a comprehensive response to the original query."
+    if isKorean(query):
+        subquery_decomposition_template = (
+            "You are an AI assistant tasked with breaking down complex queries into simpler sub-queries for a RAG system."
+            "Given the original query, decompose it into 2-4 simpler sub-queries."
 
-        "Original query: {original_query}"
+            "Original query: {original_query}"
 
-        "example: What are the impacts of climate change on the environment?"
+            "example: What are the impacts of climate change on the environment?"
 
-        "Sub-queries:"
-        "1. What are the impacts of climate change on biodiversity?"
-        "2. How does climate change affect the oceans?"
-        "3. What are the effects of climate change on agriculture?"
-        "4. What are the impacts of climate change on human health?"
-    )
+            "Sub-queries:"
+            "1. What are the impacts of climate change on biodiversity?"
+            "2. How does climate change affect the oceans?"
+            "3. What are the effects of climate change on agriculture?"
+            "4. What are the impacts of climate change on human health?"
+        )
+    else:
+        subquery_decomposition_template = (
+            "당신은 복잡한 쿼리를 RAG 시스템에 더 간단한 하위 쿼리로 분해하는 AI 어시스턴트입니다. "
+            "주어진 원래 쿼리를 2-4개의 더 간단한 하위 쿼리로 분해하세요. "
+
+            "Original query: {original_query}"
+
+            "example: 기후 변화가 환경에 미치는 영향은 무엇입니까? "
+
+            "하위 질문:"
+            "1. 기후 변화가 환경에 미치는 주요 영향은 무엇입니까?"
+            "2. 기후 변화는 생태계에 어떤 영향을 미칩니까? "
+            "3. 기후 변화가 환경에 미치는 부정적인 영향은 무엇입니까?"
+            "4. 기후 변화의 환경적 결과는 무엇입니까?"
+        )
     
     decomposition_prompt = ChatPromptTemplate([
         ('human', subquery_decomposition_template)
@@ -1204,7 +1225,10 @@ def decompose_node(state: State):
     response = decompose.invoke({"original_query": query})
     print('response: ', response)
     
-    structured_llm_decomposer = chat.with_structured_output(Decompose, include_raw=True)
+    if isKorean(query):
+        structured_llm_decomposer = chat.with_structured_output(DecomposeKor, include_raw=True)
+    else:
+        structured_llm_decomposer = chat.with_structured_output(Decompose, include_raw=True)
     
     decomposed_queries = []
     for attempt in range(5):
