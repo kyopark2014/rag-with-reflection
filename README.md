@@ -14,7 +14,7 @@ RAG의 결과가 충분한 context를 포함하고 있지 않은 경우에 [Quer
 
 ### Basic RAG 
 
-기본 RAG를 구현하기 위한  activity diagram 아래와 같습니다. Retrieve 노드에서 RAG로 사용자의 질문을 전달하여 관련된 문서(relevant document)들을 가져옵니다. RAG에 질문과 관련된 문서들이 없는 경우에는 관련도가 떨어지는 문서들이 선택될 수 있으므로 grading을 통해 문서를 선택합니다. 이후 generate 노드에서 사용자의 질문과 관련된 문서를 이용하여 결과를 얻습니다.
+기본 RAG를 구현하기 위한  activity diagram 아래와 같습니다. Retrieve 노드에서 RAG로 사용자의 질문을 전달하여 관련된 문서(relevant document)들을 가져옵니다. RAG에 질문과 관련된 문서들이 없는 경우에는 관련도가 떨어지는 문서들이 선택될 수 있으므로 grading을 통해 문서를 선택합니다. 이후 generate 노드에서 사용자의 질문과 관련된 문서를 이용하여 결과를 얻습니다.
 
 <img src="./chart/rag-basic.png" width="150">
 
