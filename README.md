@@ -489,3 +489,25 @@ def rewrite_node(state: State):
 ### Reflection 
 
 ![noname](https://github.com/user-attachments/assets/0c0f7b04-f086-449a-949a-cc725aef7480)
+
+
+### Reformation
+
+아래는 reformation 적용시에 "Advanced RAG에 대해 설명해주세요"에 대한 답변입니다. 답변의 길이나 설명은 좋으나 Advanced RAG가 아닌 일반 RAG에 대해 설명하고 있습니다.
+
+![noname](https://github.com/user-attachments/assets/2ea36d7e-d23b-44e3-902c-ff1deb6fd748)
+
+로그를 확인해보면 rewrite후에 아래와 같이 새로운 질문(revised_query)가 생성되었으나, advanced 단어가 제외되어 있습니다.
+
+```text
+RAG(Retrieval-Augmented Generation) 모델은 정보 검색과 자연어 생성을 결합한 최신 기술입니다. RAG 모델의 구조와 작동 원리, 장단점, 주요 응용 분야와 사례에 대해 자세히 설명해주시기 바랍니다. 또한 RAG 모델의 발전 방향과 향후 전망에 대해서도 언급해주시면 감사하겠습니다
+```
+
+따라서 세부 질문(sub-queries)에도 아래와 같이 "advanced"가 포함되어 있지 않으므로, Advanced RAG가 아닌 일반 RAG에 대한 답변이 생성되었습니다.
+
+```text
+1. RAG 모델의 구조와 작동 원리는 무엇입니까?
+2. RAG 모델의 장단점은 무엇입니까?
+3. RAG 모델의 주요 응용 분야와 사례는 무엇입니까?
+4. RAG 모델의 발전 방향과 향후 전망은 어떠합니까?
+```
