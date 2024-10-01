@@ -10,20 +10,22 @@ RAG의 결과가 충분한 context를 포함하고 있지 않은 경우에 [Quer
 
 ![image](./chart/workflow.png)
 
-
-## RAG with Reflection
-
-![image](./chart/rag-with-reflection.png)
-
-## 비교
+## LangGraph를 이용한 RAG의 구현
 
 ### Basic RAG 
 
 ![image](./chart/rag-basic.png)
 
+## RAG with Reflection
+
+![image](./chart/rag-with-reflection.png)
+
+
 ### Query Transformation
 
 ![image](./chart/rag-with-transformation.png)
+
+
 
 ## 실행결과
 
