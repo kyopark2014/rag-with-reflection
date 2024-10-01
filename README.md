@@ -159,7 +159,12 @@ def grade_document_based_on_relevance(conn, question, doc, models, selected):
  
 ### RAG with Reflection
 
-기본 RAG에 reflection을 추가하여, RAG로 부터 생성된 답변을 강화합니다. 이를 위해 reflect_node에서는 이전 답변(draft)로 부터 개선점을 추출하고, 관련된 3개의 query를 생성합니다. parallel_retriever는 3개의 query를 병렬로 조회하여 관련된 문서(relevant documents)를 얻고, parallel_grader를 이용하여 grading한 후에 revise_node를 이용하여 향상된 답변을 얻습니다. 
+기본 RAG에 reflection을 추가하여, RAG로 부터 생성된 답변을 강화합니다. 
+
+<img src="./chart/rag-with-reflection.png" width="300">
+   
+
+아래는 reflection을 위한 workflow입니다. reflect_node에서는 이전 답변(draft)로 부터 개선점을 추출하고, 관련된 3개의 query를 생성합니다. parallel_retriever는 3개의 query를 병렬로 조회하여 관련된 문서(relevant documents)를 얻고, parallel_grader를 이용하여 grading한 후에 revise_node를 이용하여 향상된 답변을 얻습니다. 
 
 ```python
 def buildRagWithReflection():
@@ -200,6 +205,9 @@ def buildRagWithReflection():
 
 
 ### Query Transformation
+
+<img src="./chart/rag-with-transformation.png" width="300">
+ 
 
 [query_transformations.ipynb](https://github.com/NirDiamant/RAG_Techniques/blob/main/all_rag_techniques/query_transformations.ipynb)을 참조하여 query transformation을 위한 prompt를 생성합니다.
 
