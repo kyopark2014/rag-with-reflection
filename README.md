@@ -15,7 +15,7 @@ Transformation은 RAG를 조회하기 위해 질문을 명확히 하고 관련�
 
 여기서 구현된 architecture는 아래와 같습니다. 유지보수 및 변화하는 트래픽에 강점이 있는 serverless architecture를 사용하였고, RAG로는 Amazon Bedrock Knowledge Base를 활용하였습니다. 
 
-<img src="./chart/basic-architecture.jpg" width="600">
+<img src="./chart/basic-architecture.jpg" width="500">
 
 
 ## LangGraph를 이용한 RAG의 구현
