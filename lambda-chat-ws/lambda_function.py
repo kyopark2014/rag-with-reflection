@@ -1134,16 +1134,63 @@ def rewrite_node(state: State):
     print("###### rewrite ######")
     query = state['query']
     
+    query_rewrite_template = (
+        "You are an AI assistant tasked with reformulating user queries to improve retrieval in a RAG system."
+        "Given the original query, rewrite it to be more specific," 
+        "detailed, and likely to retrieve relevant information."
+
+        "Original query: {original_query}"
+        "Rewritten query:"
+    )
+    
+    rewrite_prompt = ChatPromptTemplate([
+        ('human', query_rewrite_template)
+    ])
+
+    chat = get_chat()
+    rewrite = rewrite_prompt | chat
+           
+    res = rewrite.invoke({"original_query": query})    
+    revised_query = res.content
+    print('revised_query: ', revised_query)
+    
     return {
-        "query": query
+        "query": revised_query
     }
     
 def decompose_node(state: State):
     print("###### decompose ######")
     query = state['query']
     
+    subquery_decomposition_template = (
+        "You are an AI assistant tasked with breaking down complex queries into simpler sub-queries for a RAG system."
+        "Given the original query, decompose it into 2-4 simpler sub-queries that,"
+        "when answered together, would provide a comprehensive response to the original query."
+
+        "Original query: {original_query}"
+
+        "example: What are the impacts of climate change on the environment?"
+
+        "Sub-queries:"
+        "1. What are the impacts of climate change on biodiversity?"
+        "2. How does climate change affect the oceans?"
+        "3. What are the effects of climate change on agriculture?"
+        "4. What are the impacts of climate change on human health?"
+    )
+    
+    decomposition_prompt = ChatPromptTemplate([
+        ('human', subquery_decomposition_template)
+    ])
+
+    chat = get_chat()
+    decompose = decomposition_prompt | chat
+           
+    res = decompose.invoke({"original_query": query})
+    decomposed_query = res.content
+    print('decomposed_query: ', decomposed_query)
+    
     return {
-        "sub_queries": [query]
+        "sub_queries": [decomposed_query]
     }    
 
 ####################### LangGraph #######################
