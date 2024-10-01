@@ -14,16 +14,13 @@ RAG의 결과가 충분한 context를 포함하고 있지 않은 경우에 [Quer
 
 ### Basic RAG 
 
-![image](./chart/rag-basic.png)
-
+<img src="./chart/rag-basic.png" width="200">
+   
 ## RAG with Reflection
 
-![image](./chart/rag-with-reflection.png)
 
 
 ### Query Transformation
-
-![image](./chart/rag-with-transformation.png)
 
 
 
