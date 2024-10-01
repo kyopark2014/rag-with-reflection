@@ -1185,23 +1185,9 @@ def decompose_node(state: State):
     
     if isKorean(query):
         subquery_decomposition_template = (
-            "You are an AI assistant tasked with breaking down complex queries into simpler sub-queries for a RAG system."
-            "Given the original query, decompose it into 2-4 simpler sub-queries."
-
-            "Original query: {original_query}"
-
-            "example: What are the impacts of climate change on the environment?"
-
-            "Sub-queries:"
-            "1. What are the impacts of climate change on biodiversity?"
-            "2. How does climate change affect the oceans?"
-            "3. What are the effects of climate change on agriculture?"
-            "4. What are the impacts of climate change on human health?"
-        )
-    else:
-        subquery_decomposition_template = (
             "당신은 복잡한 쿼리를 RAG 시스템에 더 간단한 하위 쿼리로 분해하는 AI 어시스턴트입니다. "
             "주어진 원래 쿼리를 2-4개의 더 간단한 하위 쿼리로 분해하세요. "
+            "최종 결과에 <result> tag를 붙여주세요."
 
             "Original query: {original_query}"
 
@@ -1213,7 +1199,23 @@ def decompose_node(state: State):
             "3. 기후 변화가 환경에 미치는 부정적인 영향은 무엇입니까?"
             "4. 기후 변화의 환경적 결과는 무엇입니까?"
         )
-    
+    else:
+        subquery_decomposition_template = (
+            "You are an AI assistant tasked with breaking down complex queries into simpler sub-queries for a RAG system."
+            "Given the original query, decompose it into 2-4 simpler sub-queries."
+            "Provide the final answer with <result> tag."
+
+            "Original query: {original_query}"
+
+            "example: What are the impacts of climate change on the environment?"
+
+            "Sub-queries:"
+            "1. What are the impacts of climate change on biodiversity?"
+            "2. How does climate change affect the oceans?"
+            "3. What are the effects of climate change on agriculture?"
+            "4. What are the impacts of climate change on human health?"
+        )    
+        
     decomposition_prompt = ChatPromptTemplate([
         ('human', subquery_decomposition_template)
     ])
@@ -1223,6 +1225,9 @@ def decompose_node(state: State):
     decompose = decomposition_prompt | chat
     
     response = decompose.invoke({"original_query": query})
+    print('response: ', response)
+    
+    response = response[response.find('<result>')+8:len(response)-9]
     print('response: ', response)
     
     if isKorean(query):
