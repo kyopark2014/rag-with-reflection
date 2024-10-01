@@ -1225,10 +1225,9 @@ def decompose_node(state: State):
     decompose = decomposition_prompt | chat
     
     response = decompose.invoke({"original_query": query})
-    print('response: ', response)
+    print('response: ', response.content)
     
-    result = response.content    
-    result = result[result.find('<result>')+8:len(result)-9]
+    result = response.content[response.content.find('<result>')+8:len(response.content)-9]
     print('result: ', result)
     
     if isKorean(query):
