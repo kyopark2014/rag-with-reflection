@@ -1160,14 +1160,13 @@ def decompose_node(state: State):
 
             "다음의 예제를 참조하여 쿼리를 생성합니다. 각 쿼리는 한 줄을 차지합니다:"
             "<example>"
-            "원래 질문: 기후 변화가 환경에 미치는 영향은 무엇입니까? "
+            "질문: 기후 변화가 환경에 미치는 영향은 무엇입니까? "
 
             "하위 질문:"
-            "- 기후 변화가 환경에 미치는 주요 영향은 무엇입니까?"
-            "- 기후 변화는 생태계에 어떤 영향을 미칩니까? "
-            "- 기후 변화가 환경에 미치는 부정적인 영향은 무엇입니까?"
+            "기후 변화가 환경에 미치는 주요 영향은 무엇입니까?"
+            "기후 변화는 생태계에 어떤 영향을 미칩니까? "
+            "기후 변화가 환경에 미치는 부정적인 영향은 무엇입니까?"
             "</example>"
-            #" 기후 변화의 환경적 결과는 무엇입니까?"
         )
     else:
         subquery_decomposition_template = (
@@ -1175,15 +1174,19 @@ def decompose_node(state: State):
             "Given the original query, decompose it into 1-3 simpler sub-queries."
             "Provide the final answer with <result> tag."
 
-            "Original query: {original_query}"
+            "<query>"
+            "{original_query}"
+            "</query>"
 
-            "example: What are the impacts of climate change on the environment?"
+            "Create queries referring to the following example. Each query occupies one line."
+            "<example>"
+            "Query: What are the impacts of climate change on the environment?"
 
             "Sub-queries:"
             "What are the impacts of climate change on biodiversity?"
             "How does climate change affect the oceans?"
             "What are the effects of climate change on agriculture?"
-            #"What are the impacts of climate change on human health?"
+            "</example>"
         )    
         
     decomposition_prompt = ChatPromptTemplate([
