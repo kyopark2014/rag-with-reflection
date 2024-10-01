@@ -1163,9 +1163,9 @@ def decompose_node(state: State):
             "원래 질문: 기후 변화가 환경에 미치는 영향은 무엇입니까? "
 
             "하위 질문:"
-            "기후 변화가 환경에 미치는 주요 영향은 무엇입니까?"
-            "기후 변화는 생태계에 어떤 영향을 미칩니까? "
-            "기후 변화가 환경에 미치는 부정적인 영향은 무엇입니까?"
+            "- 기후 변화가 환경에 미치는 주요 영향은 무엇입니까?"
+            "- 기후 변화는 생태계에 어떤 영향을 미칩니까? "
+            "- 기후 변화가 환경에 미치는 부정적인 영향은 무엇입니까?"
             "</example>"
             #" 기후 변화의 환경적 결과는 무엇입니까?"
         )
@@ -1200,29 +1200,17 @@ def decompose_node(state: State):
     result = response.content[response.content.find('<result>')+8:len(response.content)-9]
     print('result: ', result)
     
-    if isKorean(query):
-        structured_llm_decomposer = chat.with_structured_output(QueriesKor, include_raw=True)
+    result = result.strip().replace('\n\n', '\n')
+    decomposed_queries = result.split('\n')        
+    print('decomposed_queries: ', decomposed_queries)
+    
+    if len(decomposed_queries):
+        sub_queries = decomposed_queries    
     else:
-        structured_llm_decomposer = chat.with_structured_output(Queries, include_raw=True)
-    
-    decomposed_queries = []
-    for attempt in range(5):
-        chat = get_chat()
-        info = structured_llm_decomposer.invoke(result)
-        print(f'attempt: {attempt}, info: {info}')
-    
-        if not info['parsed'] == None:
-            parsed_info = info['parsed']
-
-            decomposed_queries = parsed_info.queries
-            print('decomposed_queries: ', decomposed_queries)
-            break
-    
-    if not len(decomposed_queries):
-        decomposed_queries = [query]
+        sub_queries = [query]
     
     return {
-        "sub_queries": decomposed_queries
+        "sub_queries": sub_queries
     }    
 
 revised_query = "RAG(Retrieval-Augmented Generation) 모델은 정보 검색과 자연어 생성을 결합한 최신 기술입니다. RAG 모델의 구조와 작동 원리, 장단점, 주요 응용 분야와 사례에 대해 자세히 설명해주시기 바랍니다. 또한 RAG 모델의 발전 방향과 향후 전망에 대해서도 설명해주시면 감사하겠습니다."
