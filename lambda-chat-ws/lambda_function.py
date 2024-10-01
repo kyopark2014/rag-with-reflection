@@ -1143,20 +1143,7 @@ def rewrite_node(state: State):
     return {
         "query": revised_query
     }
-
-class Queries(BaseModel):
-    "a list of queries"
-
-    sub_queries: list[str] = Field(
-        description="The sub-queries"
-    )
-class QueriesKor(BaseModel):
-    "a list of queries"
-
-    queries: list[str] = Field(
-        description="세부 질문"
-    )
-                
+   
 def decompose_node(state: State):
     print("###### decompose ######")
     query = state['query']
@@ -1167,14 +1154,19 @@ def decompose_node(state: State):
             "주어진 원래 쿼리를 1-3개의 더 간단한 하위 쿼리로 분해하세요. "
             "최종 결과에 <result> tag를 붙여주세요."
 
-            "Original query: {original_query}"
+            "<query>"
+            "{original_query}"
+            "</query>"
 
-            "example: 기후 변화가 환경에 미치는 영향은 무엇입니까? "
+            "다음의 예제를 참조하여 쿼리를 생성합니다. 각 쿼리는 한 줄을 차지합니다:"
+            "<example>"
+            "원래 질문: 기후 변화가 환경에 미치는 영향은 무엇입니까? "
 
             "하위 질문:"
             "기후 변화가 환경에 미치는 주요 영향은 무엇입니까?"
             "기후 변화는 생태계에 어떤 영향을 미칩니까? "
             "기후 변화가 환경에 미치는 부정적인 영향은 무엇입니까?"
+            "</example>"
             #" 기후 변화의 환경적 결과는 무엇입니까?"
         )
     else:
