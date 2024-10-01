@@ -1227,8 +1227,9 @@ def decompose_node(state: State):
     response = decompose.invoke({"original_query": query})
     print('response: ', response)
     
-    response = response[response.find('<result>')+8:len(response)-9]
-    print('response: ', response)
+    result = response.content    
+    result = result[result.find('<result>')+8:len(result)-9]
+    print('result: ', result)
     
     if isKorean(query):
         structured_llm_decomposer = chat.with_structured_output(DecomposeKor, include_raw=True)
@@ -1238,7 +1239,7 @@ def decompose_node(state: State):
     decomposed_queries = []
     for attempt in range(5):
         chat = get_chat()
-        info = structured_llm_decomposer.invoke(response.content)
+        info = structured_llm_decomposer.invoke(result)
         print(f'attempt: {attempt}, info: {info}')
     
         if not info['parsed'] == None:
