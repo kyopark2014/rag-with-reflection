@@ -5,13 +5,13 @@
 
 여기에서는 LangGraph를 이용하여 기본 RAG를 구현하고, [reflection](https://github.com/kyopark2014/langgraph-agent/blob/main/reflection-agent.md)과 [query transformation](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/query-transformation.md)을 이용하여 RAG의 성능을 향상시키는 방법을 비교하여 설명합니다. RAG를 이용함으로써 필요한 시점에 적절한 비용으로 기업의 데이터를 활용한 애플리케이션을 개발할 수 있습니다. 하지만, 자연으로 질의되는 사용자의 요청으로부터 사용자의 의도를 정확히 파악하고, 관련된 문서들로 부터 꼭 필요한 문서만을 선택하고, 한국어와 영어 문서를 모두 조회하려면 다양한 노력이 필요합니다.
 
-Reflection과 transformation을 이용하였을 때의 activity diagram은 아래와 같습니다. 여기에서 "(a) RAG with reflection"은 RAG를 조회하여 얻은 문서들을 이용하여 답변을 구한 후에, reflection을 통하여 답변에서 개선하여야 할 목록 및 추가로 검색을 수행하여 얻은 문서들로 향상된 답변을 생성합니다. "(b) RAG with Transformation"은 사용자의 질문을 rewrite한 후에 추가적으로 검색할 질문들을 생성하여 RAG를 조회합니다. 
+Reflection과 transformation을 이용하였을 때의 activity diagram은 아래와 같습니다. 여기에서 "(a) RAG with reflection"은 RAG를 조회하여 얻은 문서들을 이용하여 답변을 구한 후에, reflection을 통하여 답변에서 개선하여야 할 목록 및 추가로 검색을 수행하여 얻은 문서들로 향상된 답변을 생성합니다. "(b) RAG with Transformation"은 사용자의 질문을 갱신(rewrite)한 후에 추가적으로 검색할 질문들을 생성(decompose)하여 RAG를 조회합니다. 
 
 ![image](./chart/workflow.png)
 
-Reflection은 생성한 답변을 강화하는 추가 질문을 이용하여, 향상된 답변을 생성하므로, 초기 답변보다 더 많은 정보를 제공할 수 있습니다. 하지만, RAG를 통해 얻은 답변을 갱신하는 과정에서 다수의 새로운 추가 질문을 생성하여 조회하므로, RAG 조회 비용이 대폭 늘어나고, 처리 시간의 증가가 불가피합니다. 
+Reflection은 생성한 답변으로 부터 추가 질문을 추출하여 RAG를 조회하므로, 처음 답변보다 더 많은 정보를 활용할 수 있습니다. 하지만, RAG를 통해 얻은 답변을 갱신하는 과정에서 다수의 새로운 추가 질문을 생성하여 조회하므로, RAG 조회 비용이 대폭 늘어나고, 처리 시간 증가가 불가피합니다. 
 
-Transformation은 RAG를 조회하기 위해 질문을 명확히 하고 관련된 세부 질문을 미리 생성하여 검색하므로 사용자의 질문과 좀더 가까운 문서들을 검색하여 활용할 수 있습니다. Query tansformation은 질문(query)이 짧은 경우에는 질문을 rewrite하거나 decompose하는 효과가 높지 않으며, chatbot같은 애플리케이션에서는 [이전 history를 이용해 질문을 rephrase](https://medium.com/thedeephub/rag-chatbot-powered-by-langchain-openai-google-generative-ai-and-hugging-face-apis-6a9b9d7d59db)을 수행하므로 query transformation을 통해 질문을 명확하게(rewrite) 하는 과정이 중복동작일 수 있습니다. 
+Transformation은 RAG를 조회하기 위해 질문을 명확히 하고 관련된 세부 질문을 미리 생성하여 검색하므로 사용자의 질문과 좀더 가까운 문서들을 검색하여 활용할 수 있습니다. Query tansformation은 질문(query)이 짧은 경우에는 질문을 rewrite하거나 decompose하는 효과가 높지 않으며, chatbot같은 애플리케이션에서는 [이전 history를 이용해 질문을 rephrase](https://medium.com/thedeephub/rag-chatbot-powered-by-langchain-openai-google-generative-ai-and-hugging-face-apis-6a9b9d7d59db)을 수행하므로 query transformation을 통해 질문을 명확하게(rewrite) 하는 과정이 중복 동작일 수 있습니다. 
 
 
 
