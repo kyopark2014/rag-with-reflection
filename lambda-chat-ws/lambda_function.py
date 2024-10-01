@@ -1157,7 +1157,12 @@ def rewrite_node(state: State):
     return {
         "query": revised_query
     }
-    
+
+class Decompose(BaseModel):
+        """sub queries that are well optimized for retrieval."""
+
+        sub_queries: list[str] = Field(description="The new sub queries that are well optimized for retrieval.")
+            
 def decompose_node(state: State):
     print("###### decompose ######")
     query = state['query']
@@ -1183,9 +1188,13 @@ def decompose_node(state: State):
     ])
 
     chat = get_chat()
-    decompose = decomposition_prompt | chat
+    
+    structured_llm_decomposer = chat.with_structured_output(Decompose)
+    question_rewriter = decomposition_prompt | structured_llm_decomposer
            
-    res = decompose.invoke({"original_query": query})
+    res = question_rewriter.invoke({"original_query": query})
+    print('res: ', res)
+
     decomposed_query = res.content
     print('decomposed_query: ', decomposed_query)
     
