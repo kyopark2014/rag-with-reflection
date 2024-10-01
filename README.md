@@ -25,3 +25,12 @@ RAG의 결과가 충분한 context를 포함하고 있지 않은 경우에 [Quer
 
 ![image](./chart/rag-with-transformation.png)
 
+## 실행결과
+
+### 기본 RAG
+
+![image](https://github.com/user-attachments/assets/db55d84c-ce7b-4362-a6cf-d0f312644df0)
+
+### Reflection 
+
+![noname](https://github.com/user-attachments/assets/0c0f7b04-f086-449a-949a-cc725aef7480)
