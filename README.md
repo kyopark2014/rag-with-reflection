@@ -245,6 +245,142 @@ def reflect_node(state: State):
     }
 ```
 
+parallel_retriever는 sub_queries만큼 병렬처리를 수행하여 속도를 개선합니다. 이때 retriever는 완젼관리형인 RAG 서비스인 knowledge base에서 관련된 문서를 가져옵니다. 
+
+```python
+def retriever(conn, query):
+    relevant_docs = retrieve_from_knowledge_base(query)    
+    print("---RETRIEVE: RELEVANT DOCUMENT---")
+    
+    conn.send(relevant_docs)    
+    conn.close()
+    
+    return relevant_docs
+    
+def parallel_retriever(state: State):
+    print("###### parallel_retriever ######")
+    sub_queries = state['sub_queries']
+    print('sub_queries: ', sub_queries)
+    
+    relevant_docs = []
+    processes = []
+    parent_connections = []
+    
+    for i, query in enumerate(sub_queries):
+        print(f"retrieve sub_queries[{i}]: {query}")        
+        parent_conn, child_conn = Pipe()
+        parent_connections.append(parent_conn)
+            
+        process = Process(target=retriever, args=(child_conn, query))
+        processes.append(process)
+
+    for process in processes:
+        process.start()
+            
+    for parent_conn in parent_connections:
+        docs = parent_conn.recv()
+        
+        for doc in docs:
+            relevant_docs.append(doc)
+
+    for process in processes:
+        process.join()    
+
+    return {
+        "relevant_docs": relevant_docs
+    }
+```
+
+revise_node에서는 reflection으로 얻어진 reflection critique와 sub-quries를 이용해 조회한 관련된 문서들을 이용하여 아래와 같이 초안(draft)를 향상시킵니다. 
+
+```python
+def revise_node(state: State):   
+    print("###### revise ######")
+    draft = state['draft']
+    reflection = state['reflection']
+    
+    if isKorean(draft):
+        revise_template = (
+            "당신은 장문 작성에 능숙한 유능한 글쓰기 도우미입니다."                
+            "draft을 critique과 information 사용하여 수정하십시오."
+            "최종 결과는 한국어로 작성하고 <result> tag를 붙여주세요."
+                            
+            "<draft>"
+            "{draft}"
+            "</draft>"
+                            
+            "<critique>"
+            "{reflection}"
+            "</critique>"
+
+            "<information>"
+            "{content}"
+            "</information>"
+        )
+    else:    
+        revise_template = (
+            "You are an excellent writing assistant." 
+            "Revise this draft using the critique and additional information."
+            "Provide the final answer with <result> tag."
+                            
+            "<draft>"
+            "{draft}"
+            "</draft>"
+                        
+            "<critique>"
+            "{reflection}"
+            "</critique>"
+
+            "<information>"
+            "{content}"
+            "</information>"
+        )
+                    
+    revise_prompt = ChatPromptTemplate([
+        ('human', revise_template)
+    ])    
+    filtered_docs = state['filtered_docs']
+              
+    content = []   
+    if len(filtered_docs):
+        for d in filtered_docs:
+            content.append(d.page_content)        
+
+    chat = get_chat()
+    reflect = revise_prompt | chat
+           
+    res = reflect.invoke(
+        {
+            "draft": draft,
+            "reflection": reflection,
+            "content": content
+        }
+    )
+    output = res.content
+        
+    revised_draft = output[output.find('<result>')+8:len(output)-9]
+            
+    revision_number = state["revision_number"] if state.get("revision_number") is not None else 1
+            
+    return {
+        "draft": revised_draft,
+        "revision_number": revision_number + 1
+    }
+```
+
+이때, 초안은 MAX_REVISIONS만큼 반복하여 refection을 적용할 수 있습니다. 
+
+```python
+MAX_REVISIONS = 1
+
+def continue_reflection(state: State, config):
+    print("###### continue_reflection ######")
+    max_revisions = config.get("configurable", {}).get("max_revisions", MAX_REVISIONS)
+            
+    if state["revision_number"] > max_revisions:
+        return "end"
+    return "continue"
+```
 
 ### Query Transformation
 
