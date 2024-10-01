@@ -486,12 +486,7 @@ def rewrite_node(state: State):
 
 ![image](https://github.com/user-attachments/assets/db55d84c-ce7b-4362-a6cf-d0f312644df0)
 
-### Reflection 
-
-![noname](https://github.com/user-attachments/assets/0c0f7b04-f086-449a-949a-cc725aef7480)
-
-
-### Reformation
+### Reformation 
 
 아래는 reformation 적용시에 "Advanced RAG에 대해 설명해주세요"에 대한 답변입니다. 답변의 길이나 설명은 좋으나 Advanced RAG가 아닌 일반 RAG에 대해 설명하고 있습니다.
 
@@ -513,3 +508,10 @@ RAG 모델의 구조와 작동 원리, 장단점, 주요 응용 분야와 사례
 3. RAG 모델의 주요 응용 분야와 사례는 무엇입니까?
 4. RAG 모델의 발전 방향과 향후 전망은 어떠합니까?
 ```
+
+### Reflection 
+
+아래는 "Advanced RAG에 대해 설명해주세요"에 대한 답변입니다. 기본 RAG에서 조회하였을 때보다 각 기능의 세부내용에 대해 더 많은 정보를 제공하고 있습니다. 
+
+![noname](https://github.com/user-attachments/assets/0c0f7b04-f086-449a-949a-cc725aef7480)
+
