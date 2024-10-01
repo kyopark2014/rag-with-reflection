@@ -1138,6 +1138,7 @@ def rewrite_node(state: State):
         "You are an AI assistant tasked with reformulating user queries to improve retrieval in a RAG system."
         "Given the original query, rewrite it to be more specific," 
         "detailed, and likely to retrieve relevant information."
+        "Put it in <result> tags."
 
         "Original query: {original_query}"
         "Rewritten query:"
@@ -1152,6 +1153,8 @@ def rewrite_node(state: State):
            
     res = rewrite.invoke({"original_query": query})    
     revised_query = res.content
+    
+    revised_query = revised_query[revised_query.find('<result>')+8:len(revised_query)-9] # remove <result> tag                   
     print('revised_query: ', revised_query)
     
     return {
@@ -1161,8 +1164,19 @@ def rewrite_node(state: State):
 class Decompose(BaseModel):
         """sub queries that are well optimized for retrieval."""
 
-        sub_queries: list[str] = Field(description="The new sub queries that are well optimized for retrieval.")
-            
+        sub_queries: list[str] = Field(
+            description="The new sub queries that are well optimized for retrieval."
+        )
+
+"""
+class Research(BaseModel):
+
+    reflection: Reflection = Field(description="Your reflection on the initial answer.")
+    sub_queries: list[str] = Field(
+        description="1-3 search queries for researching improvements to address the critique of your current answer."
+    )
+"""
+                
 def decompose_node(state: State):
     print("###### decompose ######")
     query = state['query']
@@ -1195,7 +1209,7 @@ def decompose_node(state: State):
     res = question_rewriter.invoke({"original_query": query})
     print('res: ', res)
 
-    decomposed_query = res.content
+    decomposed_query = res.sub_queries
     print('decomposed_query: ', decomposed_query)
     
     return {
