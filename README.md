@@ -243,21 +243,30 @@ def reflect_node(state: State):
         chat = get_chat()        
         if isKorean(draft):
             structured_llm = chat.with_structured_output(ResearchKor, include_raw=True)
-            qa = f"질문: {query}\n\n답변: {draft}"
-    
+            qa = f"질문: {query}\n\n답변: {draft}"    
         else:
             structured_llm = chat.with_structured_output(Research, include_raw=True)
             qa = f"Question: {query}\n\nAnswer: {draft}"
-            
-        info = structured_llm.invoke(qa)
-        print(f'attempt: {attempt}, info: {info}')
-                
+        
+        info = structured_llm.invoke(qa)                
         if not info['parsed'] == None:
             parsed_info = info['parsed']
             reflection = [parsed_info.reflection.missing, parsed_info.reflection.advisable]
-            sub_queries = parsed_info.sub_queries                
+            sub_queries = parsed_info.sub_queries
+                
+            if isKorean(draft):
+                translated_search = []
+                for q in sub_queries:
+                    chat = get_chat()
+                    if isKorean(q):
+                        search = traslation(chat, q, "Korean", "English")
+                    else:
+                        search = traslation(chat, q, "English", "Korean")
+                    translated_search.append(search)
+                        
+                sub_queries += translated_search
+
             break
-        
     return {
         "reflection": reflection,
         "sub_queries": sub_queries,
