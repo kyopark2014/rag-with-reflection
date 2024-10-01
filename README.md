@@ -13,6 +13,9 @@ Reflection은 생성한 답변으로 부터 추가 질문을 추출하여 RAG를
 
 Transformation은 RAG를 조회하기 위해 질문을 명확히 하고 관련된 세부 질문을 미리 생성하여 검색하므로 사용자의 질문과 좀더 가까운 문서들을 검색하여 활용할 수 있습니다. Query tansformation은 질문(query)이 짧은 경우에는 질문을 rewrite하거나 decompose하는 효과가 높지 않으며, chatbot같은 애플리케이션에서는 [이전 history를 이용해 질문을 rephrase](https://medium.com/thedeephub/rag-chatbot-powered-by-langchain-openai-google-generative-ai-and-hugging-face-apis-6a9b9d7d59db)을 수행하므로 query transformation을 통해 질문을 명확하게(rewrite) 하는 과정이 중복 동작일 수 있습니다. 
 
+여기서 구현된 architecture는 아래와 같습니다. 유지보수 및 변화하는 트래픽에 강점이 있는 serverless architecture를 사용하였고, RAG로는 Amazon Bedrock Knowledge Base를 활용하였습니다. 
+
+<img src="./chart/basic-architecture.jpg" width="600">
 
 
 ## LangGraph를 이용한 RAG의 구현
