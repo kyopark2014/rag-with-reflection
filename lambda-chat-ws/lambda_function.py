@@ -1204,14 +1204,14 @@ def decompose_node(state: State):
     chat = get_chat()
     
     response = decomposition_prompt.invoke({"original_query": query})
-    print('response: ', response)
+    print('response: ', response[-1].content)
     
     structured_llm_decomposer = chat.with_structured_output(Decompose, include_raw=True)
     
     decomposed_queries = []
     for attempt in range(5):
         chat = get_chat()
-        info = structured_llm_decomposer.invoke(response.content)
+        info = structured_llm_decomposer.invoke(response[-1].content)
         print(f'attempt: {attempt}, info: {info}')
     
         if not info['parsed'] == None:
