@@ -940,15 +940,16 @@ def reflect_node(state: State):
     for attempt in range(5):
         chat = get_chat()
         
-    #    if isKorean(draft):
-    #        structured_llm = chat.with_structured_output(ResearchKor, include_raw=True)
-    #        qa = f"질문: {query}\n\n답변: {draft}"
+        if isKorean(draft):
+            structured_llm = chat.with_structured_output(ResearchKor, include_raw=True)
+            qa = f"질문: {query}\n\n답변: {draft}"
     
-    #    else:
-    #        structured_llm = chat.with_structured_output(Research, include_raw=True)
-    #        qa = f"Question: {query}\n\nAnswer: {draft}"
-        structured_llm = chat.with_structured_output(Research, include_raw=True)
-        qa = f"Question: {query}\n\nAnswer: {draft}"
+        else:
+            structured_llm = chat.with_structured_output(Research, include_raw=True)
+            qa = f"Question: {query}\n\nAnswer: {draft}"
+        
+        #structured_llm = chat.with_structured_output(Research, include_raw=True)
+        #qa = f"Question: {query}\n\nAnswer: {draft}"
             
         info = structured_llm.invoke(qa)
         print(f'attempt: {attempt}, info: {info}')
@@ -983,7 +984,6 @@ def reflect_node(state: State):
         "sub_queries": sub_queries,
     }
 
-"""
 query = "advanced RAG에 대해 설명해줘"
 draft = "네, 서연이가 Advanced RAG에 대해 설명드리겠습니다. \
 Advanced RAG는 일반적인 RAG(Retrieval Augmented Generation) 모델의 성능을 향상시키기 위한 고급 기술들을 통합한 모델입니다. 주요 기술로는 다음과 같은 것들이 있습니다. \
@@ -994,7 +994,6 @@ Advanced RAG는 일반적인 RAG(Retrieval Augmented Generation) 모델의 성�
 
 result = reflect_node({"query": query, "draft": draft})
 print('result: ', result)
-"""
 
 def retriever(conn, query):
     relevant_docs = retrieve_from_knowledge_base(query)    
@@ -1074,7 +1073,6 @@ def revise_node(state: State):
         revise_template = (
             "You are an excellent writing assistant." 
             "Revise this draft using the critique and additional information."
-            # "Provide the final answer using Korean with <result> tag."
             "Provide the final answer with <result> tag."
                             
             "<draft>"
@@ -1162,10 +1160,10 @@ def rewrite_node(state: State):
     }
 
 class Decompose(BaseModel):
-        """sub queries that are well optimized for retrieval."""
+        """sub-queries that are well optimized for retrieval."""
 
         sub_queries: list[str] = Field(
-            description="The new sub queries that are well optimized for retrieval."
+            description="The sub-queries that are well optimized for retrieval."
         )
 
 """
@@ -1183,8 +1181,8 @@ def decompose_node(state: State):
     
     subquery_decomposition_template = (
         "You are an AI assistant tasked with breaking down complex queries into simpler sub-queries for a RAG system."
-        "Given the original query, decompose it into 2-4 simpler sub-queries that,"
-        "when answered together, would provide a comprehensive response to the original query."
+        "Given the original query, decompose it into 2-4 simpler sub-queries."
+        # "When answered together, would provide a comprehensive response to the original query."
 
         "Original query: {original_query}"
 
@@ -1229,6 +1227,12 @@ def decompose_node(state: State):
     return {
         "sub_queries": decomposed_queries
     }    
+
+revised_query = "RAG(Retrieval-Augmented Generation) 모델은 정보 검색과 자연어 생성을 결합한 최신 기술입니다. RAG 모델의 구조와 작동 원리, 장단점, 주요 응용 분야와 사례에 대해 자세히 설명해주시기 바랍니다. 또한 RAG 모델의 발전 방향과 향후 전망에 대해서도 설명해주시면 감사하겠습니다."
+
+output = decompose_node({"query": revised_query})
+print('output: ', output)
+
 
 ####################### LangGraph #######################
 # RAG (Basic)
@@ -1372,7 +1376,7 @@ def run_rag_with_transformation(connectionId, requestId, query):
     output = app.invoke(inputs, config)
     print('output (run_rag_with_reflection): ', output)
     
-    return output['final_answer']
+    return output['draft']
 
 #########################################################                    
 def revise_question(connectionId, requestId, chat, query):    
