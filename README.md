@@ -202,6 +202,48 @@ def buildRagWithReflection():
     return workflow.compile()
 ```
 
+reflection은 초안(draft)로 부터 아래와 같이 [structured output](https://github.com/kyopark2014/langgraph-agent/blob/main/structured-output.md)을 이용하여 추출합니다. 추출된 결과에는 reflection과 관련하여 missing, advisable, superfluous을 얻어서 문자의 개선에 도움을 줄 수 있으며, sub_queries를 이용해 1-3개의 새로운 질문을 생성합니다.
+
+```python
+class Reflection(BaseModel):
+    missing: str = Field(description="Critique of what is missing.")
+    advisable: str = Field(description="Critique of what is helpful for better writing")
+    superfluous: str = Field(description="Critique of what is superfluous")
+
+class Research(BaseModel):
+    """Provide reflection and then follow up with search queries to improve the question/answer."""
+
+    reflection: Reflection = Field(description="Your reflection on the initial answer.")
+    sub_queries: list[str] = Field(
+        description="1-3 search queries for researching improvements to address the critique of your current answer."
+    )
+
+def reflect_node(state: State):
+    print("###### reflect ######")
+    query = state['query']
+    draft = state['draft']
+        
+    reflection = []
+    sub_queries = []
+    for attempt in range(5):
+        chat = get_chat()        
+        structured_llm = chat.with_structured_output(Research, include_raw=True)
+        qa = f"Question: {query}\n\nAnswer: {draft}"
+            
+        info = structured_llm.invoke(qa)
+        print(f'attempt: {attempt}, info: {info}')
+                
+        if not info['parsed'] == None:
+            parsed_info = info['parsed']
+            reflection = [parsed_info.reflection.missing, parsed_info.reflection.advisable]
+            sub_queries = parsed_info.sub_queries                
+            break
+        
+    return {
+        "reflection": reflection,
+        "sub_queries": sub_queries,
+    }
+```
 
 
 ### Query Transformation
