@@ -23,7 +23,7 @@ Transformation은 RAG를 조회하기 위해 질문을 명확히 하고 관련�
 
 <img src="./chart/rag-basic.png" width="150">
 
-LangGraph로 아래와 같이 workflow를 구성합니다. 여기에는 retrieve_node, parallel_grader, generate_node가 있습니다. retrieve_node는 RAG에 질의하고, parallel_grader는 가져온 관련된 문서를 검증하고, generate_node에서 답변을 생성합니다. 
+LangGraph로 아래와 같이 workflow를 구성합니다. 여기 노드(node)에는 retrieve_node, parallel_grader, generate_node가 있습니다. retrieve_node는 RAG에 질의하고, parallel_grader는 가져온 관련된 문서를 검증하고, generate_node에서 답변을 생성합니다. 
 
 ```python
 class State(TypedDict):
