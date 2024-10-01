@@ -1203,8 +1203,10 @@ def decompose_node(state: State):
 
     chat = get_chat()
     
-    response = decomposition_prompt.invoke({"original_query": query})
-    print('response: ', response[-1].content)
+    decompose = decomposition_prompt | chat
+    
+    response = decompose.invoke({"original_query": query})
+    print('response: ', response)
     
     structured_llm_decomposer = chat.with_structured_output(Decompose, include_raw=True)
     
