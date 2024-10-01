@@ -980,19 +980,6 @@ def reflect_node(state: State):
         "sub_queries": sub_queries,
     }
 
-"""
-query = "advanced RAG에 대해 설명해줘"
-draft = "네, 서연이가 Advanced RAG에 대해 설명드리겠습니다. \
-Advanced RAG는 일반적인 RAG(Retrieval Augmented Generation) 모델의 성능을 향상시키기 위한 고급 기술들을 통합한 모델입니다. 주요 기술로는 다음과 같은 것들이 있습니다. \
-1. Hybrid-Fusion: 질의에 대한 관련 문서를 검색할 때 단어 기반의 lexical 검색과 의미 기반의 semantic 검색을 동시에 수행하고, 그 결과를 융합하여 활용합니다. \
-2. Reranker: 검색된 문서들 중에서 질의와 문맥을 모두 고려하여 관련성을 재측정하고 순위를 재조정합니다.  \
-3. Parent Document: 문서들 간의 계층 구조를 활용하여 상위 문서와 하위 문서 간의 관계를 파악하고, 이를 통해 검색 성능을 높이고 정보 손실을 줄입니다. \
-이러한 고급 기술들을 통합함으로써 Advanced RAG는 보다 정확하고 포괄적인 지식 검색 및 생성이 가능해집니다. 질의에 대한 관련 정보를 더 잘 찾아내고 활용할 수 있게 되는 것이죠."
-
-result = reflect_node({"query": query, "draft": draft})
-print('result: ', result)
-"""
-
 def retriever(conn, query):
     relevant_docs = retrieve_from_knowledge_base(query)    
     print("---RETRIEVE: RELEVANT DOCUMENT---")
@@ -1165,10 +1152,10 @@ class Decompose(BaseModel):
         )
 
 class DecomposeKor(BaseModel):
-        """검색을 위해 잘 최적화된 하위 쿼리들"""
+        """query list"""
 
-        sub_queries: list[str] = Field(
-            description="주어진 문장에 포함되어 있는 하위 쿼리들"
+        queries: list[str] = Field(
+            description="포함되어 있는 질문 목록"
         )
 """
 class Research(BaseModel):
@@ -1244,7 +1231,7 @@ def decompose_node(state: State):
         if not info['parsed'] == None:
             parsed_info = info['parsed']
 
-            decomposed_queries = parsed_info.sub_queries
+            decomposed_queries = parsed_info.queries
             print('decomposed_queries: ', decomposed_queries)
             break
     
