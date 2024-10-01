@@ -14,7 +14,7 @@ RAG의 결과가 충분한 context를 포함하고 있지 않은 경우에 [Quer
 
 ### Basic RAG 
 
-<img src="./chart/rag-basic.png" width="200">
+<img src="./chart/rag-basic.png" width="150">
    
 ## RAG with Reflection
 
