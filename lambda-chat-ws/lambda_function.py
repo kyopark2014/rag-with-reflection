@@ -1203,17 +1203,29 @@ def decompose_node(state: State):
 
     chat = get_chat()
     
-    structured_llm_decomposer = chat.with_structured_output(Decompose)
-    question_rewriter = decomposition_prompt | structured_llm_decomposer
-           
-    res = question_rewriter.invoke({"original_query": query})
-    print('res: ', res)
+    response = decomposition_prompt.invoke({"original_query": query})
+    print('response: ', response)
+    
+    structured_llm_decomposer = chat.with_structured_output(Decompose, include_raw=True)
+    
+    decomposed_queries = []
+    for attempt in range(5):
+        chat = get_chat()
+        info = structured_llm_decomposer.invoke(response.content)
+        print(f'attempt: {attempt}, info: {info}')
+    
+        if not info['parsed'] == None:
+            parsed_info = info['parsed']
 
-    decomposed_query = res.sub_queries
-    print('decomposed_query: ', decomposed_query)
+            decomposed_queries = parsed_info.sub_queries
+            print('decomposed_queries: ', decomposed_queries)
+            break
+    
+    if not len(decomposed_queries):
+        decomposed_queries = [query]
     
     return {
-        "sub_queries": [decomposed_query]
+        "sub_queries": decomposed_queries
     }    
 
 ####################### LangGraph #######################
