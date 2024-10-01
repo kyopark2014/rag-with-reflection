@@ -539,11 +539,11 @@ RAG 모델의 구조와 작동 원리, 장단점, 주요 응용 분야와 사례
 
 더이상 인프라를 사용하지 않는 경우에 아래처럼 모든 리소스를 삭제할 수 있습니다. 
 
-1) [API Gateway Console](https://us-east-1.console.aws.amazon.com/apigateway/main/apis?region=us-east-1)로 접속하여 "rest-api-for-langgraph-agent", "ws-api-for-langgraph-agent"을 삭제합니다.
+1) [API Gateway Console](https://us-west-2.console.aws.amazon.com/apigateway/main/apis?region=us-west-2)로 접속하여 "rest-api-for-rag-with-reflection", "ws-api-for-rag-with-reflection"을 삭제합니다.
 
-2) [Cloud9 Console](https://us-east-1.console.aws.amazon.com/cloud9control/home?region=us-east-1#/)에 접속하여 아래의 명령어로 전체 삭제를 합니다.
+2) [Cloud9 Console](https://us-west-2.console.aws.amazon.com/cloud9control/home?region=us-west-2#/)에 접속하여 아래의 명령어로 전체 삭제를 합니다.
 
 ```text
-cd ~/environment/langgraph-agent/cdk-langgraph-agent/ && cdk destroy --all
+cd ~/environment/rag-with-reflection/cdk-rag-with-reflection/ && cdk destroy --all
 ```
 
