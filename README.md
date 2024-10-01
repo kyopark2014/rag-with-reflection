@@ -209,13 +209,24 @@ class Reflection(BaseModel):
     missing: str = Field(description="Critique of what is missing.")
     advisable: str = Field(description="Critique of what is helpful for better writing")
     superfluous: str = Field(description="Critique of what is superfluous")
-
 class Research(BaseModel):
     """Provide reflection and then follow up with search queries to improve the question/answer."""
 
     reflection: Reflection = Field(description="Your reflection on the initial answer.")
     sub_queries: list[str] = Field(
         description="1-3 search queries for researching improvements to address the critique of your current answer."
+    )
+class ReflectionKor(BaseModel):
+    missing: str = Field(description="답변에 있어야하는데 빠진 내용이나 단점")
+    advisable: str = Field(description="더 좋은 답변이 되기 위해 추가하여야 할 내용")
+    superfluous: str = Field(description="답변의 길이나 스타일에 대한 비평")
+
+class ResearchKor(BaseModel):
+    """답변을 개선하기 위한 검색 쿼리를 제공합니다."""
+
+    reflection: ReflectionKor = Field(description="답변에 대한 평가")
+    sub_queries: list[str] = Field(
+        description="답변과 관련된 3개 이내의 검색어"
     )
 
 def reflect_node(state: State):
@@ -227,8 +238,13 @@ def reflect_node(state: State):
     sub_queries = []
     for attempt in range(5):
         chat = get_chat()        
-        structured_llm = chat.with_structured_output(Research, include_raw=True)
-        qa = f"Question: {query}\n\nAnswer: {draft}"
+        if isKorean(draft):
+            structured_llm = chat.with_structured_output(ResearchKor, include_raw=True)
+            qa = f"질문: {query}\n\n답변: {draft}"
+    
+        else:
+            structured_llm = chat.with_structured_output(Research, include_raw=True)
+            qa = f"Question: {query}\n\nAnswer: {draft}"
             
         info = structured_llm.invoke(qa)
         print(f'attempt: {attempt}, info: {info}')
@@ -389,7 +405,7 @@ RAG에 질문하기 전에 입력된 query를 변환하여 성능을 향상시�
 
 <img src="./chart/rag-with-transformation.png" width="400">
 
-Transformation을 위한 workflow는 아래와 같습니다. 
+Transformation을 위한 workflow는 아래와 같습니다. RAG를 조회하기 전에 rewrite_node로 질문을 풀어서 쓰고, decompose_node로 상세한 질문들을 생성합니다. 
 
 ```python
 def buildRagWithTransformation():
@@ -412,6 +428,41 @@ def buildRagWithTransformation():
     workflow.add_edge("parallel_grader", "generate_node")    
     workflow.add_edge("generate_node", END)
 ```
+
+rewrite_node에서는 질문을 검색에 맞게 상세하게 풀어줍니다.
+
+```python
+def rewrite_node(state: State):
+    print("###### rewrite ######")
+    query = state['query']
+    
+    query_rewrite_template = (
+        "You are an AI assistant tasked with reformulating user queries to improve retrieval in a RAG system."
+        "Given the original query, rewrite it to be more specific," 
+        "detailed, and likely to retrieve relevant information."
+        "Put it in <result> tags."
+
+        "Original query: {original_query}"
+        "Rewritten query:"
+    )
+    
+    rewrite_prompt = ChatPromptTemplate([
+        ('human', query_rewrite_template)
+    ])
+
+    chat = get_chat()
+    rewrite = rewrite_prompt | chat
+           
+    res = rewrite.invoke({"original_query": query})    
+    revised_query = res.content
+    
+    revised_query = revised_query[revised_query.find('<result>')+8:len(revised_query)-9] # remove <result> tag                   
+    
+    return {
+        "query": revised_query
+    }
+```
+
 
 ## 실행결과
 
