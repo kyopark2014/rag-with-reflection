@@ -1155,7 +1155,7 @@ class DecomposeKor(BaseModel):
         """query list"""
 
         queries: list[str] = Field(
-            description="포함되어 있는 질문 목록"
+            description="질문 번호로 제외한 순수 질문"
         )
 """
 class Research(BaseModel):
