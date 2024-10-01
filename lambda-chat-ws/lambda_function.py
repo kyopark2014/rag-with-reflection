@@ -1145,16 +1145,16 @@ def rewrite_node(state: State):
     }
 
 class Queries(BaseModel):
-    "sub-queries that are well optimized for retrieval."
+    "a list of queries"
 
     sub_queries: list[str] = Field(
-        description="The sub-queries that are well optimized for retrieval."
+        description="The sub-queries without query number"
     )
 class QueriesKor(BaseModel):
     "a list of queries"
 
     queries: list[str] = Field(
-        description="질문 번호로 제외한 하위 질문"
+        description="질문 번호를 제외한 세부 질문"
     )
                 
 def decompose_node(state: State):
