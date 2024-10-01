@@ -1165,10 +1165,10 @@ class Decompose(BaseModel):
         )
 
 class DecomposeKor(BaseModel):
-        """검색을 위해 잘 최적화된 하위 쿼리"""
+        """검색을 위해 잘 최적화된 하위 쿼리들"""
 
         sub_queries: list[str] = Field(
-            description="검색에 최적화된 하위 쿼리"
+            description="주어진 문장에 포함되어 있는 하위 쿼리들"
         )
 """
 class Research(BaseModel):
