@@ -16,7 +16,7 @@ if(conversationType != '') {
 }
 else {
     convtypeInput.value = "normal"  // general conversation
-} 
+}
 
 console.log(userInput.value);
 console.log(convtypeInput.value);
@@ -30,6 +30,16 @@ else {
     multiRegionInput.value = "disable"  
 }
 console.log('multi_region: ', multiRegionInput.value);
+
+const ragInput = document.querySelector('#ragMode');
+let rag_mode = localStorage.getItem('ragMode'); // set conversationType if exists 
+if(rag_mode != '') {
+    ragInput.value = rag_mode;
+}
+else {
+    ragInput.value = "disable"  
+}
+console.log('ragInput: ', ragInput.value);
 
 // provisioning
 getProvisioningInfo(userId);
@@ -49,6 +59,9 @@ function onSubmit(e) {
 
     localStorage.setItem('multiRegion',multiRegionInput.value);
     console.log('Save config> multiRegion:', multiRegionInput.value)
+
+    localStorage.setItem('ragMode',ragInput.value);
+    console.log('Save config> ragInput:', ragInput.value)
 
     window.location.href = "chat.html";
 }
