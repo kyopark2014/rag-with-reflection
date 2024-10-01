@@ -170,6 +170,12 @@ def grade_document_based_on_relevance(conn, question, doc, models, selected):
 
 ### 기본 RAG
 
+아래와 같이 메뉴에서 "RAG (Basic)"을 선택합니다.
+
+![image](https://github.com/user-attachments/assets/0bf0dfaf-b73e-441c-b6ae-123300b427da)
+
+채팅창에 "Advanced RAG에 대해 설명해주세요"라고 입력합니다.
+
 ![image](https://github.com/user-attachments/assets/db55d84c-ce7b-4362-a6cf-d0f312644df0)
 
 ### Reflection 
