@@ -1213,7 +1213,7 @@ def decompose_node(state: State):
     decomposed_queries = []
     for attempt in range(5):
         chat = get_chat()
-        info = structured_llm_decomposer.invoke(response[-1].content)
+        info = structured_llm_decomposer.invoke(response.content)
         print(f'attempt: {attempt}, info: {info}')
     
         if not info['parsed'] == None:
