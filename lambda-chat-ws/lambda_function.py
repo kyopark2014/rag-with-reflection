@@ -1163,9 +1163,9 @@ def decompose_node(state: State):
             "질문: 기후 변화가 환경에 미치는 영향은 무엇입니까? "
 
             "하위 질문:"
-            "기후 변화가 환경에 미치는 주요 영향은 무엇입니까?"
-            "기후 변화는 생태계에 어떤 영향을 미칩니까? "
-            "기후 변화가 환경에 미치는 부정적인 영향은 무엇입니까?"
+            "1. 기후 변화가 환경에 미치는 주요 영향은 무엇입니까?"
+            "2. 기후 변화는 생태계에 어떤 영향을 미칩니까? "
+            "3. 기후 변화가 환경에 미치는 부정적인 영향은 무엇입니까?"
             "</example>"
         )
     else:
@@ -1183,9 +1183,9 @@ def decompose_node(state: State):
             "Query: What are the impacts of climate change on the environment?"
 
             "Sub-queries:"
-            "What are the impacts of climate change on biodiversity?"
-            "How does climate change affect the oceans?"
-            "What are the effects of climate change on agriculture?"
+            "1. What are the impacts of climate change on biodiversity?"
+            "2. How does climate change affect the oceans?"
+            "3. What are the effects of climate change on agriculture?"
             "</example>"
         )    
         
@@ -1206,14 +1206,15 @@ def decompose_node(state: State):
     result = result.strip().replace('\n\n', '\n')
     decomposed_queries = result.split('\n')        
     print('decomposed_queries: ', decomposed_queries)
-    
+
+    sub_queries = []    
     if len(decomposed_queries):
         sub_queries = decomposed_queries    
     else:
         sub_queries = [query]
     
     return {
-        "sub_queries": sub_queries
+        "sub_queries": [query] + sub_queries
     }    
 
 revised_query = "RAG(Retrieval-Augmented Generation) 모델은 정보 검색과 자연어 생성을 결합한 최신 기술입니다. RAG 모델의 구조와 작동 원리, 장단점, 주요 응용 분야와 사례에 대해 자세히 설명해주시기 바랍니다. 또한 RAG 모델의 발전 방향과 향후 전망에 대해서도 설명해주시면 감사하겠습니다."
