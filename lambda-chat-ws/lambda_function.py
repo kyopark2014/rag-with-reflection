@@ -1144,27 +1144,18 @@ def rewrite_node(state: State):
         "query": revised_query
     }
 
-class Decompose(BaseModel):
-        """sub-queries that are well optimized for retrieval."""
+class Queries(BaseModel):
+    "sub-queries that are well optimized for retrieval."
 
-        sub_queries: list[str] = Field(
-            description="The sub-queries that are well optimized for retrieval."
-        )
-
-class DecomposeKor(BaseModel):
-        """query list"""
-
-        queries: list[str] = Field(
-            description="질문 번호로 제외한 순수 질문"
-        )
-"""
-class Research(BaseModel):
-
-    reflection: Reflection = Field(description="Your reflection on the initial answer.")
     sub_queries: list[str] = Field(
-        description="1-3 search queries for researching improvements to address the critique of your current answer."
+        description="The sub-queries that are well optimized for retrieval."
     )
-"""
+class QueriesKor(BaseModel):
+    "a list of queries"
+
+    queries: list[str] = Field(
+        description="질문 번호로 제외한 하위 질문"
+    )
                 
 def decompose_node(state: State):
     print("###### decompose ######")
@@ -1218,9 +1209,9 @@ def decompose_node(state: State):
     print('result: ', result)
     
     if isKorean(query):
-        structured_llm_decomposer = chat.with_structured_output(DecomposeKor, include_raw=True)
+        structured_llm_decomposer = chat.with_structured_output(QueriesKor, include_raw=True)
     else:
-        structured_llm_decomposer = chat.with_structured_output(Decompose, include_raw=True)
+        structured_llm_decomposer = chat.with_structured_output(Queries, include_raw=True)
     
     decomposed_queries = []
     for attempt in range(5):
