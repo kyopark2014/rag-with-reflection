@@ -3,7 +3,7 @@
 <a href="https://hits.seeyoufarm.com"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fkyopark2014%2Frag-with-reflection&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false"/></a>
 <img alt="License" src="https://img.shields.io/badge/LICENSE-MIT-green">
 
-여기에서는 LangGraph를 이용하여 기본 RAG를 구현하고, reflection과 transformation을 이용하여 RAG의 성능을 향상시키는 방법에 대해 설명합니다. Reflection과 transformation을 이용하였을 때의 activity diagram은 아래와 같습니다.
+여기에서는 LangGraph를 이용하여 기본 RAG를 구현하고, reflection과 transformation을 이용하여 RAG의 성능을 향상시키는 방법을 비교하여 설명합니다. Reflection과 transformation을 이용하였을 때의 activity diagram은 아래와 같습니다.
 
 ![image](./chart/workflow.png)
 
