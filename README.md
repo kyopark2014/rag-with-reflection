@@ -445,6 +445,8 @@ def buildRagWithTransformation():
     workflow.add_edge("generate_node", END)
 ```
 
+#### Query Rewrite
+
 rewrite_node에서는 질문을 검색에 맞게 상세하게 풀어줍니다.
 
 ```python
@@ -478,6 +480,86 @@ def rewrite_node(state: State):
         "query": revised_query
     }
 ```
+
+### Query Decompose
+
+질문이 여러개의 Subquery를 가질수 있으므로 아래와 같이 Decompose를 수행합니다.
+
+```python
+def decompose_node(state: State):
+    print("###### decompose ######")
+    query = state['query']
+    
+    if isKorean(query):
+        subquery_decomposition_template = (
+            "당신은 복잡한 쿼리를 RAG 시스템에 더 간단한 하위 쿼리로 분해하는 AI 어시스턴트입니다. "
+            "주어진 원래 쿼리를 1-3개의 더 간단한 하위 쿼리로 분해하세요. "
+            "최종 결과에 <result> tag를 붙여주세요."
+
+            "<query>"
+            "{original_query}"
+            "</query>"
+
+            "다음의 예제를 참조하여 쿼리를 생성합니다. 각 쿼리는 한 줄을 차지합니다:"
+            "<example>"
+            "질문: 기후 변화가 환경에 미치는 영향은 무엇입니까? "
+
+            "하위 질문:"
+            "1. 기후 변화가 환경에 미치는 주요 영향은 무엇입니까?"
+            "2. 기후 변화는 생태계에 어떤 영향을 미칩니까? "
+            "3. 기후 변화가 환경에 미치는 부정적인 영향은 무엇입니까?"
+            "</example>"
+        )
+    else:
+        subquery_decomposition_template = (
+            "You are an AI assistant tasked with breaking down complex queries into simpler sub-queries for a RAG system."
+            "Given the original query, decompose it into 1-3 simpler sub-queries."
+            "Provide the final answer with <result> tag."
+
+            "<query>"
+            "{original_query}"
+            "</query>"
+
+            "Create queries referring to the following example. Each query occupies one line."
+            "<example>"
+            "Query: What are the impacts of climate change on the environment?"
+
+            "Sub-queries:"
+            "1. What are the impacts of climate change on biodiversity?"
+            "2. How does climate change affect the oceans?"
+            "3. What are the effects of climate change on agriculture?"
+            "</example>"
+        )    
+        
+    decomposition_prompt = ChatPromptTemplate([
+        ('human', subquery_decomposition_template)
+    ])
+
+    chat = get_chat()
+    
+    decompose = decomposition_prompt | chat
+    
+    response = decompose.invoke({"original_query": query})
+    print('response: ', response.content)
+    
+    result = response.content[response.content.find('<result>')+8:len(response.content)-9]
+    print('result: ', result)
+    
+    result = result.strip().replace('\n\n', '\n')
+    decomposed_queries = result.split('\n')        
+    print('decomposed_queries: ', decomposed_queries)
+
+    sub_queries = []    
+    if len(decomposed_queries):
+        sub_queries = decomposed_queries    
+    else:
+        sub_queries = [query]
+    
+    return {
+        "sub_queries": [query] + sub_queries
+    }    
+```
+
 
 ## 직접 실습 해보기
 
