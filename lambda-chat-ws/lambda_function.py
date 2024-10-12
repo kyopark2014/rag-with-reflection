@@ -1234,6 +1234,7 @@ def buildRagBasic():
     
     workflow.add_edge("retrieve_node", "parallel_grader")
     workflow.add_edge("parallel_grader", "generate_node")
+    workflow.add_edge("generate_node", END)
             
     return workflow.compile()
     
