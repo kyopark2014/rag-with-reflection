@@ -416,7 +416,7 @@ def continue_reflection(state: State, config):
 
 ### Query Transformation
 
-RAG에 질문하기 전에 입력된 query를 변환하여 성능을 향상시키기 위해서는 아래와 같이 rewrite와 decompse 과정이 필요합니다. rewrite_node는 RAG에서 좀더 좋은 결과를 얻도록 query의 내용을 자세하게 풀어 적습니다. 이후 decompse_node에서는 RAG에서 조회할때 사용할 sub-quries들을 생성합니다. 여기에서는 [query_transformations.ipynb](https://github.com/NirDiamant/RAG_Techniques/blob/main/all_rag_techniques/query_transformations.ipynb)을 참조하여 query transformation을 위한 prompt를 생성합니다.
+RAG에 질문하기 전에 입력된 query를 변환하여 성능을 향상시키기 위해서는 아래와 같이 rewrite와 decompose 과정이 필요합니다. rewrite_node는 RAG에서 좀더 좋은 결과를 얻도록 query의 내용을 자세하게 풀어 적습니다. 이후 decompse_node에서는 RAG에서 조회할때 사용할 sub-quries들을 생성합니다. 여기에서는 [query_transformations.ipynb](https://github.com/NirDiamant/RAG_Techniques/blob/main/all_rag_techniques/query_transformations.ipynb)을 참조하여 query transformation을 위한 prompt를 생성합니다.
 
 
 <img src="./chart/rag-with-transformation.png" width="400">
